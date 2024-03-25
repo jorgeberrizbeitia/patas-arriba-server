@@ -13,40 +13,35 @@ const saltRounds = 10;
 
 // POST /api/auth/signup - Validates user data and creates user document in the DB
 router.post("/signup", async (req, res, next) => {
-  const { email, password, confirmPassword, firstName, lastName, internationalDialingCode, localPhoneNumber } = req.body;
-  console.log(email, password, firstName, lastName, internationalDialingCode, localPhoneNumber)
+  const { email, password, firstName, lastName, phoneCode, phoneNumber } = req.body;
+  console.log(email, password, firstName, lastName, phoneCode, phoneNumber)
 
-  if (!email || !password || !confirmPassword || !firstName || !lastName || !internationalDialingCode || !localPhoneNumber) {
-    res.status(400).json({ message: "Todos los campos deben estar llenos" });
+  if (!email || !password || !firstName || !lastName || !phoneCode || !phoneNumber) {
+    res.status(400).json({ errorMessage: "Todos los campos deben estar llenos" });
     return;
   }
 
-  if (password !== confirmPassword) {
-    res.status(400).json({ message: "Campos de contraseña no concuerdan" });
-    return;
-  }
-
-  const nameRegex = /^[a-zA-Z ]{2,20}$/;
+  const nameRegex = /^[a-zA-ZÀ-ÖØ-öØ-ÿ\s']{1,20}$/;
   if (!nameRegex.test(firstName) || !nameRegex.test(lastName)) {
-    res.status(400).json({ message: "Campos de nombre y apellido deben tener solo letras, espacios y de 2 a 20 caracteres" });
+    res.status(400).json({ errorMessage: "Campos de nombre y apellido deben tener solo letras, espacios y de 2 a 20 caracteres" });
     return;
   }
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
   if (!emailRegex.test(email)) {
-    res.status(400).json({ message: "Correo electrónico con formato incorrecto" });
+    res.status(400).json({ errorMessage: "Correo electrónico con formato incorrecto" });
     return;
   }
 
   const passwordRegex = /(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}/;
   if (!passwordRegex.test(password)) {
-    res.status(400).json({ message: "Contraseña debe tener al menos 6 caractéres, un numero, una minúscula y una mayúscula" });
+    res.status(400).json({ errorMessage: "Contraseña debe tener al menos 6 caractéres, un numero, una minúscula y una mayúscula" });
     return;
   }
 
-  const localPhoneNumberRegex = /^[0-9]{4,20}$/;
-  if (!localPhoneNumberRegex.test(localPhoneNumber)) {
-    res.status(400).json({ message: "Número telefónico solo debe contener dígitos numericos y de 4 a 20 dígitos" });
+  const phoneNumberRegex = /^[0-9]{4,20}$/;
+  if (!phoneNumberRegex.test(phoneNumber)) {
+    res.status(400).json({ errorMessage: "Número telefónico solo debe contener dígitos numericos y de 4 a 20 dígitos" });
     return;
   }
 
@@ -54,19 +49,19 @@ router.post("/signup", async (req, res, next) => {
 
     const foundUserByEmail = await User.findOne({ email });
     if (foundUserByEmail) {
-      res.status(400).json({ message: "Ya existe un usuario con ese correo electronico" });
-      return;
-    }
-
-    const foundUserByPhoneNumber = await User.findOne({ $and: [{internationalDialingCode}, {localPhoneNumber}]});
-    if (foundUserByPhoneNumber) {
-      res.status(400).json({ message: "Ya existe un usuario con ese número telefonico" });
+      res.status(400).json({ errorField: "email", errorMessage: "Ya existe un usuario con ese correo electronico" });
       return;
     }
 
     const foundUserByFullName = await User.findOne({ $and: [{firstName: cleanString(firstName)}, {lastName: cleanString(lastName)}]});
     if (foundUserByFullName) {
-      res.status(400).json({ message: "Ya existe un usuario con el mismo nombre y apellido" });
+      res.status(400).json({ errorField: "fullName", errorMessage: "Ya existe un usuario con el mismo nombre y apellido" });
+      return;
+    }
+
+    const foundUserByPhoneNumber = await User.findOne({ $and: [{phoneCode}, {phoneNumber}]});
+    if (foundUserByPhoneNumber) {
+      res.status(400).json({ errorField: "phoneNumber", errorMessage: "Ya existe un usuario con ese número telefonico" });
       return;
     }
 
@@ -77,8 +72,8 @@ router.post("/signup", async (req, res, next) => {
       email, 
       firstName: cleanString(firstName), // removes double spaces and converts to lowercase
       lastName: cleanString(lastName), // removes double spaces and converts to lowercase
-      internationalDialingCode, 
-      localPhoneNumber, 
+      phoneCode, 
+      phoneNumber, 
       password: hashedPassword 
     });
 
@@ -93,7 +88,7 @@ router.post("/login", async (req, res, next) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    res.status(400).json({ message: "Todos los campos deben estar llenos" });
+    res.status(400).json({ errorMessage: "Todos los campos deben estar llenos" });
     return;
   }
   
@@ -102,14 +97,14 @@ router.post("/login", async (req, res, next) => {
     const foundUser = await User.findOne({ email })
 
     if (!foundUser) {
-      // res.status(401).json({ message: "Usuario no encontrado con ese nombre de usuario o correo electrónico" });
-      res.status(401).json({ message: "Usuario no encontrado con ese correo electrónico" });
+      // res.status(401).json({ errorMessage: "Usuario no encontrado con ese nombre de usuario o correo electrónico" });
+      res.status(401).json({ errorMessage: "Usuario no encontrado con ese correo electrónico" });
       return;
     }
 
     const passwordCorrect = await bcrypt.compare(password, foundUser.password);
     if (!passwordCorrect) {
-      res.status(401).json({ message: "Contraseña no valida" });
+      res.status(401).json({ errorMessage: "Contraseña no valida" });
       return;
     }
 

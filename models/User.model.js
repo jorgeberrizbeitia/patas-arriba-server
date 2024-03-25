@@ -35,13 +35,13 @@ const userSchema = new Schema(
       trim: true,
       lowercase: true,
     },
-    internationalDialingCode: {
+    phoneCode: {
       type: Number,
-      required: [true, "Dialing code is required."],
+      required: [true, "Phone code is required."],
       default: 34,
       max: 999
     },
-    localPhoneNumber: {
+    phoneNumber: {
       type: String,
       required: [true, "Phone Number is required."],
       trim: true,
