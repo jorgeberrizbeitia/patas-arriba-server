@@ -97,14 +97,13 @@ router.post("/login", async (req, res, next) => {
     const foundUser = await User.findOne({ email })
 
     if (!foundUser) {
-      // res.status(401).json({ errorMessage: "Usuario no encontrado con ese nombre de usuario o correo electrónico" });
-      res.status(401).json({ errorMessage: "Usuario no encontrado con ese correo electrónico" });
+      res.status(401).json({ errorField: "email", errorMessage: "Usuario no encontrado con ese correo electrónico" });
       return;
     }
 
     const passwordCorrect = await bcrypt.compare(password, foundUser.password);
     if (!passwordCorrect) {
-      res.status(401).json({ errorMessage: "Contraseña no valida" });
+      res.status(401).json({ errorField: "password", errorMessage: "Contraseña no valida" });
       return;
     }
 
