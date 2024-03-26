@@ -7,16 +7,16 @@ const carGroupSchema = new Schema(
     },
     pickupLocation: {
       type: String,
+      required: true,
       trim: true,
       maxLength: 200
     },
     pickupTime: {
-      type: String,
-      trim: true,
-      maxLength: 200
+      type: Date,
     },
     roomAvailable: {
       type: Number,
+      required: true
     },
     owner: {
       type: Schema.Types.ObjectId,
