@@ -6,7 +6,7 @@ const jwt = require("jsonwebtoken");
 
 const User = require("../models/User.model");
 
-const { isAuthenticated } = require("../middleware/jwt.middleware.js");
+const { isAuthenticated } = require("../middleware/auth.middleware.js");
 const cleanString = require("../utils/cleanString.js")
 
 const saltRounds = 10;
