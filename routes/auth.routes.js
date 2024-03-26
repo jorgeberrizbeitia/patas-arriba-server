@@ -128,7 +128,7 @@ router.post("/login", async (req, res, next) => {
 
 // GET /api/auth/verify - Used to verify JWT stored on the client
 router.get("/verify", isAuthenticated, (req, res, next) => {
-  res.status(200).json(req.payload);
+  res.status(200).json({payload: req.payload});
 });
 
 module.exports = router;
