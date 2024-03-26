@@ -107,6 +107,11 @@ router.post("/login", async (req, res, next) => {
       return;
     }
 
+    if (foundUser.role === "pending") {
+      res.status(401).json({ errorField: "role", errorMessage: "Usuario sin permisos para entrar a la app, contacte a un admin para solicitar permiso" });
+      return;
+    }
+
     const payload = { 
       _id: foundUser._id, 
       email: foundUser.email, 
