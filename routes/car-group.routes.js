@@ -1,6 +1,8 @@
 const express = require("express");
 const router = express.Router();
 
+const CarGroup = require("../models/CarGroup.model")
+
 // GET "/api/car-group/list/:eventId" - Returns a list of all car groups of that event
 
 // GET "/api/car-group/:carGroup" - Returns details of a car group you are in of this event

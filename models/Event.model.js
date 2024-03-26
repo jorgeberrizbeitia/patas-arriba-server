@@ -14,6 +14,10 @@ const eventSchema = new Schema(
       trim: true,
       maxLength: 50
     },
+    date: {
+      type: Date,
+      required: [true, "Date is required."]
+    },
     category: {
       type: String,
       enum: ["car-group", "no-car-group"]
