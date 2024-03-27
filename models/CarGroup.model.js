@@ -12,7 +12,8 @@ const carGroupSchema = new Schema(
       maxLength: 200
     },
     pickupTime: {
-      type: Date,
+      type: String,
+      required: true
     },
     roomAvailable: {
       type: Number,

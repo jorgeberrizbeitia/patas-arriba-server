@@ -38,6 +38,7 @@ const eventSchema = new Schema(
       type: Boolean,
       default: false
     }
+    //todo change to status, canceled, open, closed
   },
   {
     timestamps: true,

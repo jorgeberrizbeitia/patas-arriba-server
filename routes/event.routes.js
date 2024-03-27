@@ -239,6 +239,8 @@ router.patch("/:eventId/join", async (req, res, next) => {
 
   try {
 
+    //todo you can only join upcoming events and not canceled or closed
+
     const updatedEvent = await Event.findByIdAndUpdate(eventId, { $addToSet: { participants: req.payload._id } })
 
     if (!updatedEvent) {
@@ -246,7 +248,7 @@ router.patch("/:eventId/join", async (req, res, next) => {
       return
     }
 
-    res.status(202).json({ updatedEventId: updatedEvent?._id })
+    res.sendStatus(202)
     
   } catch (error) {
     next(error)
@@ -273,7 +275,7 @@ router.patch("/:eventId/leave", async (req, res, next) => {
     // if user is in a car group, it will also cause it to leave.
     await CarGroup.findOneAndUpdate({$and: [{event: updatedEvent._id}, {members: {$in: req.payload._id}}]}, {$pull: {members: req.payload._id}})
 
-    res.status(202).json({ updatedEventId: updatedEvent?._id }) //! check frontend needs
+    res.sendStatus(202)
     
   } catch (error) {
     next(error)

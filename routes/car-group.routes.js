@@ -14,16 +14,18 @@ router.post("/:eventId", async (req, res, next) => {
   const { eventId } = req.params
   const { pickupCoordinates, pickupLocation, pickupTime, roomAvailable } = req.body
 
-  const areRequiredFieldsValid = validateRequiredFields(res, pickupLocation, roomAvailable)
+  const areRequiredFieldsValid = validateRequiredFields(res, roomAvailable)
   if (!areRequiredFieldsValid) return
+  //todo todos los campos deben ser obligatorios al crear
 
   const isEventIdValid = validateMongoIdFormat(eventId, res, "Id de evento en formato incorrecto")
   if (!isEventIdValid) return
 
-  if (pickupTime) {
-    let isDateFormatValid = validateDateFormat(res, pickupTime, "Formato de fecha invalido")
-    if (!isDateFormatValid) return
-  }
+  //! removed as time is in string format
+  // if (pickupTime) {
+  //   let isDateFormatValid = validateDateFormat(res, pickupTime, "Formato de fecha invalido")
+  //   if (!isDateFormatValid) return
+  // }
 
   try {
 
@@ -39,7 +41,7 @@ router.post("/:eventId", async (req, res, next) => {
       return
     }
     
-    const newCarGroup = await CarGroup.create({ 
+    await CarGroup.create({ 
       pickupCoordinates,
       pickupLocation,
       pickupTime,
@@ -48,7 +50,7 @@ router.post("/:eventId", async (req, res, next) => {
       event: eventId
     })
 
-    res.status(200).json(newCarGroup) //! check frontend need
+    res.sendStatus(202)
 
   } catch (error) {
     next(error)
@@ -68,7 +70,7 @@ router.get("/list/:eventId", async (req, res, next) => {
     
     const carGroupsByEvent = await CarGroup
       .find({ event: eventId })
-      .select("pickupLocation pickupCoordinates roomAvailable members owner")
+      .select("pickupLocation pickupCoordinates pickupTime roomAvailable members owner")
       .populate("owner", "firstName lastName profilePic")
     res.status(200).json(carGroupsByEvent)
 
