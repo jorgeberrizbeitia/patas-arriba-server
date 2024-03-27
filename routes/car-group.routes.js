@@ -168,13 +168,45 @@ router.patch("/:carGroupId/join", async (req, res, next) => {
 
   try {
 
-    //todo solo te puedes unir si hay espacio en coche
-    //todo no te puede unir si eres el owner
+    const carGroup = CarGroup.findById(carGroupId)
+
+    if (!carGroup) {
+      res.status(400).json({ errorMessage: "No hay grupos de coche con ese id" })
+      return
+    }
+
+    if (carGroup.member.length >= carGroup.roomAvailable ) {
+      res.status(400).json({ errorMessage: "No hay espacio disponible en este grupo de coche" })
+      return
+    }
+
+    if (carGroup.owner._id == req.payload._id) {
+      res.status(400).json({ errorMessage: "No te puedes unir como miembro al grupo de coche que has creado" })
+      return
+    }
+
+    const event = await Event.findById(carGroup.event)
+
+    if (!event || event.isCancelled) {
+      res.status(400).json({ errorMessage: "No te puedes unir al grupo de coche porque el evento de ese grupo de coche  no existe o ha sido cancelado" })
+      return
+    }
+
+    if (!event.participants.includes(req.payload._id)) {
+      res.status(400).json({ errorMessage: "No te puedes unir al grupo de coche porque no te has unido al evento" })
+      return
+    }
+
+    const carGroupAlreadyJoined = await CarGroup.findOne({$and: [{event: updatedEvent._id}, {members: {$in: req.payload._id}}]})
+    if (carGroupAlreadyJoined) {
+      res.status(400).json({ errorMessage: "No te puedes unir al grupo de coche porque ya estas en un grupo de coche para el mismo evento." })
+      return
+    }
 
     const updatedCarGroup = await CarGroup.findByIdAndUpdate(carGroupId, { $addToSet: { members: req.payload._id } })
 
     if (!updatedCarGroup) {
-      res.status(400).json({ errorMessage: "No hay eventos con ese id" })
+      res.status(500).json({ errorMessage: "Hubo un problema al agregar el usuario al grupo de coche" })
       return
     }
 
@@ -199,7 +231,7 @@ router.patch("/:carGroupId/leave", async (req, res, next) => {
     const updatedCarGroup = await CarGroup.findByIdAndUpdate(carGroupId, { $pull: { members: req.payload._id } })
 
     if (!updatedCarGroup) {
-      res.status(400).json({ errorMessage: "No hay eventos con ese id" })
+      res.status(400).json({ errorMessage: "No hay eventos con ese id o hubo un problema al remover al usuario del grupo de coche" })
       return
     }
 

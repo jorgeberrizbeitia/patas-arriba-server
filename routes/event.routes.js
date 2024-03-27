@@ -270,7 +270,10 @@ router.patch("/:eventId/leave", async (req, res, next) => {
       return
     }
 
-    res.status(202).json({ updatedEventId: updatedEvent?._id })
+    // if user is in a car group, it will also cause it to leave.
+    await CarGroup.findOneAndUpdate({$and: [{event: updatedEvent._id}, {members: {$in: req.payload._id}}]}, {$pull: {members: req.payload._id}})
+
+    res.status(202).json({ updatedEventId: updatedEvent?._id }) //! check frontend needs
     
   } catch (error) {
     next(error)
@@ -278,7 +281,7 @@ router.patch("/:eventId/leave", async (req, res, next) => {
 
 })
 
-// DELETE "/api/event" - Creates a new event (admin only) also deletes all car groups and messages
+// DELETE "/api/event" - Creates a new event (admin only) also deletes all car groups and messages from this event
 router.delete("/:eventId", isAdmin, async (req, res, next) => {
 
   const { eventId } = req.params
