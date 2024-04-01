@@ -14,6 +14,9 @@ const eventSchema = new Schema(
       trim: true,
       maxLength: 50
     },
+    coordinates: {
+      type: [Number],
+    },
     date: {
       type: Date,
       required: [true, "Date is required."]
@@ -38,11 +41,11 @@ const eventSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "Message"
     }],
-    isCancelled: {
-      type: Boolean,
-      default: false
+    status: {
+      type: String,
+      default: "open",
+      enum: ["open", "closed", "cancelled"]
     }
-    //todo change to status, canceled, open, closed
   },
   {
     timestamps: true,

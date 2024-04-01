@@ -64,6 +64,7 @@ router.get("/", async (req, res, next) => {
     const allEvents = await Event
       .find()
       .select("title date location participants")
+      .sort({date: -1})
 
     res.status(200).json(allEvents)
 
@@ -83,7 +84,7 @@ router.get("/upcoming", async (req, res, next) => {
     const upcomingEvents = await Event
       .find({ date: { $gt: today } })
       .select("title date location participants")
-      .sort( { date:1 } )
+      .sort( { date: -1 } )
 
     res.status(200).json(upcomingEvents)
 
