@@ -94,6 +94,15 @@ router.get("/:carGroupId", async (req, res, next) => {
       .findById(carGroupId)
       .populate("owner", "firstName lastName phoneCode phoneNumber profilePic")
       .populate("members", "firstName lastName phoneCode phoneNumber profilePic")
+      .populate({
+        path: "messages",
+        model: "Message",
+        populate: {
+          path: "sender",
+          model: "User",
+          select: "firstName lastName profilePic"
+        }
+      })
 
     if (!carGroupDetails) {
       res.status(400).json({errorMessage: "Grupo de coche no existe por ese id"})

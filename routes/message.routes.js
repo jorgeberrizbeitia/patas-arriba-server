@@ -44,7 +44,7 @@ router.post("/:eventId/event", async (req, res, next) => {
     }
 
     const updatedEvent = await Event.findByIdAndUpdate(eventId, { $addToSet: { messages: createdMessage._id } })
-    //! this might later be changed to use socket, kept the messages name instead of chat as to differentiate from car group chat
+    //! this might later be changed to use socket
 
     if (!updatedEvent) {
       // below to delete the message if the event doesn't exist or was a problem adding it to the event
@@ -93,8 +93,8 @@ router.post("/:carGroupId/car-group", async (req, res, next) => {
       return
     }
 
-    const updatedCarGroup = await CarGroup.findByIdAndUpdate(carGroupId, { $addToSet: { chat: createdMessage._id } })
-    //! this might later be changed to use socket, thus the chat name
+    const updatedCarGroup = await CarGroup.findByIdAndUpdate(carGroupId, { $addToSet: { messages: createdMessage._id } })
+    //! this might later be changed to use socket
 
     if (!updatedCarGroup) {
       // below to delete the message if the event doesn't exist

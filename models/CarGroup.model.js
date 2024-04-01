@@ -31,7 +31,7 @@ const carGroupSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "User"
     }],
-    chat: [{
+    messages: [{
       type: Schema.Types.ObjectId,
       ref: "Message"
     }],  
