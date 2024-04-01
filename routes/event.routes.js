@@ -275,6 +275,10 @@ router.patch("/:eventId/leave", async (req, res, next) => {
     // if user is in a car group, it will also cause it to leave.
     await CarGroup.findOneAndUpdate({$and: [{event: updatedEvent._id}, {members: {$in: req.payload._id}}]}, {$pull: {members: req.payload._id}})
 
+    //if uses has car group created, it will also delete it.
+    await CarGroup.findOneAndDelete({$and: [{event: updatedEvent._id}, {owner: req.payload._id}]})
+    //? should I delete or cancel it?
+
     res.sendStatus(202)
     
   } catch (error) {

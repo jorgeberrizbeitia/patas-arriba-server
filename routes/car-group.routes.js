@@ -170,14 +170,14 @@ router.patch("/:carGroupId/join", async (req, res, next) => {
 
   try {
 
-    const carGroup = CarGroup.findById(carGroupId)
+    const carGroup = await CarGroup.findById(carGroupId)
 
     if (!carGroup) {
       res.status(400).json({ errorMessage: "No hay grupos de coche con ese id" })
       return
     }
 
-    if (carGroup.member.length >= carGroup.roomAvailable ) {
+    if (carGroup.members.length >= carGroup.roomAvailable ) {
       res.status(400).json({ errorMessage: "No hay espacio disponible en este grupo de coche" })
       return
     }
@@ -199,7 +199,7 @@ router.patch("/:carGroupId/join", async (req, res, next) => {
       return
     }
 
-    const carGroupAlreadyJoined = await CarGroup.findOne({$and: [{event: updatedEvent._id}, {members: {$in: req.payload._id}}]})
+    const carGroupAlreadyJoined = await CarGroup.findOne({$and: [{event: event._id}, {members: {$in: req.payload._id}}]})
     if (carGroupAlreadyJoined) {
       res.status(400).json({ errorMessage: "No te puedes unir al grupo de coche porque ya estas en un grupo de coche para el mismo evento." })
       return
@@ -212,7 +212,7 @@ router.patch("/:carGroupId/join", async (req, res, next) => {
       return
     }
 
-    res.status(202).json({ updatedCarGroupId: updatedCarGroup?._id })
+    res.sendStatus(202)
     
   } catch (error) {
     next(error)
