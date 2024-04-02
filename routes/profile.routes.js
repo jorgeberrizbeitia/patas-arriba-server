@@ -8,7 +8,7 @@ router.get("/", isAdmin, async (req, res, next) => {
 
   try {
     
-    const userList = await User.find().select("email firstName lastName phoneCode phoneNumber role profilePic")
+    const userList = await User.find().select("email username fullName phoneCode phoneNumber role profilePic")
     res.status(200).json(userList)
 
   } catch (error) {
@@ -22,7 +22,7 @@ router.get("/own", async (req, res, next) => {
 
   try {
     
-    const ownProfile = await User.findById(req.payload._id).select("email firstName lastName phoneCode phoneNumber profilePic")
+    const ownProfile = await User.findById(req.payload._id).select("email username fullName phoneCode phoneNumber profilePic")
     res.status(200).json(ownProfile)
 
   } catch (error) {
@@ -36,7 +36,7 @@ router.get("/:userId", async (req, res, next) => {
 
   try {
     
-    const userProfile = await User.findById(req.params.userId).select("firstName lastName phoneCode phoneNumber profilePic role")
+    const userProfile = await User.findById(req.params.userId).select("username fullName phoneCode phoneNumber profilePic role")
     res.status(200).json(userProfile)
 
   } catch (error) {
@@ -47,9 +47,11 @@ router.get("/:userId", async (req, res, next) => {
 
 // PATCH "/api/profile/profile-pic" - Updates logged user profile pic
 
-// PATCH "/api/profile/full-name" - Updates logged user firstName and lastName
+// PATCH "/api/profile/full-name" - Updates logged user fullName
 
 // PATCH "/api/profile/password" - Updates logged user password
+
+// PATCH "/api/profile/username" - Updates logged user username
 
 // PATCH "/api/profile/phone" - Updates logged user phoneCode & phoneNumber
 

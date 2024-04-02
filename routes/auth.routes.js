@@ -13,17 +13,25 @@ const saltRounds = 10;
 
 // POST /api/auth/signup - Validates user data and creates user document in the DB
 router.post("/signup", async (req, res, next) => {
-  const { email, password, firstName, lastName, phoneCode, phoneNumber } = req.body;
-  console.log(email, password, firstName, lastName, phoneCode, phoneNumber)
+  const { email, username, password, fullName, phoneCode, phoneNumber } = req.body;
+  console.log(email, password, fullName, phoneCode, phoneNumber)
 
-  if (!email || !password || !firstName || !lastName || !phoneCode || !phoneNumber) {
+  //todo check to use validateRequiredFields here
+
+  if (!email || !username|| !password || !fullName || !phoneCode || !phoneNumber ) {
     res.status(400).json({ errorMessage: "Todos los campos deben estar llenos" });
     return;
   }
 
-  const nameRegex = /^[a-zA-ZÀ-ÖØ-öØ-ÿ\s']{1,20}$/;
-  if (!nameRegex.test(firstName) || !nameRegex.test(lastName)) {
-    res.status(400).json({ errorMessage: "Campos de nombre y apellido deben tener solo letras, espacios y de 2 a 20 caracteres" });
+  const usernameRegex = /^[^\s]{1,30}$/;
+  if (!usernameRegex.test(username)) {
+    res.status(400).json({ errorMessage: "Nombre de Usuario no debe tener espacios y de 3 a 15 characteres" });
+    return;
+  }
+  
+  const fullNameRegex = /^[a-zA-ZÀ-ÖØ-öØ-ÿ\s']{1,20}$/;
+  if (!fullNameRegex.test(fullName)) {
+    res.status(400).json({ errorMessage: "Nombre Completo debe tener solo letras, espacios y de 3 a 30 caracteres" });
     return;
   }
 
@@ -53,11 +61,18 @@ router.post("/signup", async (req, res, next) => {
       return;
     }
 
-    const foundUserByFullName = await User.findOne({ $and: [{firstName: cleanString(firstName)}, {lastName: cleanString(lastName)}]});
-    if (foundUserByFullName) {
-      res.status(400).json({ errorField: "fullName", errorMessage: "Ya existe un usuario con el mismo nombre y apellido" });
+    const foundUserByUsername = await User.findOne({ username });
+    if (foundUserByUsername) {
+      res.status(400).json({ errorField: "username", errorMessage: "Ya existe un usuario con ese nombre de usuario" });
       return;
     }
+
+    //* changed to username
+    // const foundUserByFullName = await User.findOne({ $and: [{firstName: cleanString(firstName)}, {lastName: cleanString(lastName)}]});
+    // if (foundUserByFullName) {
+    //   res.status(400).json({ errorField: "fullName", errorMessage: "Ya existe un usuario con el mismo nombre y apellido" });
+    //   return;
+    // }
 
     const foundUserByPhoneNumber = await User.findOne({ $and: [{phoneCode}, {phoneNumber}]});
     if (foundUserByPhoneNumber) {
@@ -70,11 +85,12 @@ router.post("/signup", async (req, res, next) => {
 
     await User.create({ 
       email, 
-      firstName: cleanString(firstName), // removes double spaces and converts to lowercase
-      lastName: cleanString(lastName), // removes double spaces and converts to lowercase
+      username,
+      password: hashedPassword,
+      fullName: cleanString(fullName), // removes double spaces and converts to lowercase
       phoneCode, 
-      phoneNumber, 
-      password: hashedPassword 
+      phoneNumber,
+      role: "pending"
     });
 
     res.sendStatus(201);
@@ -85,19 +101,19 @@ router.post("/signup", async (req, res, next) => {
 
 // POST /api/auth/login - Authenticates user credentials (email/username and password) and returns a JWT
 router.post("/login", async (req, res, next) => {
-  const { email, password } = req.body;
+  const { credential, password } = req.body;
 
-  if (!email || !password) {
+  if (!credential || !password) {
     res.status(400).json({ errorMessage: "Todos los campos deben estar llenos" });
     return;
   }
   
   try {
     
-    const foundUser = await User.findOne({ email })
+    const foundUser = await User.findOne({$or: [{ email: credential, username: credential }]})
 
     if (!foundUser) {
-      res.status(401).json({ errorField: "email", errorMessage: "Usuario no encontrado con ese correo electrónico" });
+      res.status(401).json({ errorField: "credential", errorMessage: "Usuario no encontrado con ese correo electrónico o nombre de usuario" });
       return;
     }
 
@@ -108,13 +124,14 @@ router.post("/login", async (req, res, next) => {
     }
 
     if (foundUser.role === "pending") {
-      res.status(401).json({ errorField: "role", errorMessage: "Usuario sin permisos para entrar a la app, contacte a un admin para solicitar permiso" });
+      res.status(401).json({ errorField: "role", errorMessage: "Usuario sin permisos para entrar, contacte a un admin para solicitar permiso" });
       return;
     }
+    //todo telefono de acceso para solicitar permiso?
 
     const payload = { 
       _id: foundUser._id, 
-      email: foundUser.email, 
+      email: foundUser.email,
       role: foundUser.role 
     };
 

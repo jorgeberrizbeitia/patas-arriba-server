@@ -9,28 +9,23 @@ const userSchema = new Schema(
       lowercase: true,
       trim: true,
     },
-    //! confirmar como debe ser username o si debe existir
-    // username: {
-    //   type: String,
-    //   required: [true, "Name is required."],
-    //   unique: true,
-    //   lowercase: true,
-    //   trim: true,
-    // },
+    username: {
+      type: String,
+      required: [true, "Username is required."],
+      unique: true,
+      lowercase: true,
+      minLength: 3,
+      maxLength: 15,
+      trim: true,
+    },
     password: {
       type: String,
       required: [true, "Password is required."],
     },
-    firstName: {
+    fullName: {
       type: String,
-      required: true,
-      maxLength: 30,
-      trim: true,
-      lowercase: true,
-    },
-    lastName: {
-      type: String,
-      required: true,
+      required: [true, "Full Name is required."],
+      minLength: 3,
       maxLength: 30,
       trim: true,
       lowercase: true,
