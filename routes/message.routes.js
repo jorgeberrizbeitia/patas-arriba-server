@@ -53,7 +53,8 @@ router.post("/:eventId/event", async (req, res, next) => {
       return
     }
 
-    res.status(201).json(createdMessage) //! check frontend need
+    res.sendStatus(201)
+    //todo send updated list of messages
 
   } catch (error) {
     next(error)
@@ -78,7 +79,7 @@ router.post("/:carGroupId/car-group", async (req, res, next) => {
       return
     }
 
-    if (!carGroup.members.includes(req.payload._id)) {
+    if (!carGroup.members.includes(req.payload._id) && carGroup.owner != req.payload._id) {
       res.status(401).json({ errorMessage: "No puedes crear mensajes en este grupo de coche porque no perteneces a este grupo de coche" })
       return
     }
@@ -103,7 +104,8 @@ router.post("/:carGroupId/car-group", async (req, res, next) => {
       return
     }
 
-    res.sendStatus(201).json(createdMessage) //! check frontend need
+    res.sendStatus(201)
+    //todo send updated list of messages
 
   } catch (error) {
     next(error)

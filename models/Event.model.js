@@ -8,6 +8,9 @@ const eventSchema = new Schema(
       trim: true,
       maxLength: 50
     },
+    description: {
+      type: String
+    },
     location: {
       type: String,
       required: [true, "Location is required."],
@@ -27,7 +30,8 @@ const eventSchema = new Schema(
     },
     category: {
       type: String,
-      enum: ["car-group", "no-car-group"]
+      enum: ["car-group", "no-car-group"],
+      required: [true, "Category is required"]
     },
     creator: {
       type: Schema.Types.ObjectId,

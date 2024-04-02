@@ -13,9 +13,9 @@ const validateRequiredFields = require("../utils/validateRequiredFields")
 // POST "/api/event" - Creates a new event (admin only)
 router.post("/", isAdmin, async (req, res, next) => {
 
-  const { title, location, category, date } = req.body
+  const { title, location, category, date, time } = req.body
 
-  const areRequiredFieldsValid = validateRequiredFields(res, title, location, category, date)
+  const areRequiredFieldsValid = validateRequiredFields(res, title, location, category, date, time)
   if (!areRequiredFieldsValid) return
 
   let isDateFormatValid = validateDateFormat(res, date, "Formato de fecha invalido")
@@ -23,7 +23,7 @@ router.post("/", isAdmin, async (req, res, next) => {
 
   // todo see how to create validation function for this
   if (title.length > 50 || title.length > 50) {
-    res.status(400).json({ errorMessage: "Los campos de titulo y ubicación no deben tener más de 50 caracteres" });
+    res.status(400).json({ errorMessage: "Los campos de titulo y lugar no deben tener más de 50 caracteres" });
     return;
   }
 
@@ -40,6 +40,7 @@ router.post("/", isAdmin, async (req, res, next) => {
       location,
       category,
       date,
+      time,
       creator: req.payload._id
     })
 
@@ -63,7 +64,7 @@ router.get("/", async (req, res, next) => {
     
     const allEvents = await Event
       .find()
-      .select("title date location participants")
+      .select("title date location participants status")
       .sort({date: -1})
 
     res.status(200).json(allEvents)
@@ -78,12 +79,13 @@ router.get("/", async (req, res, next) => {
 router.get("/upcoming", async (req, res, next) => {
 
   const today = new Date()
+  today.setHours(0, 0, 0, 0); // Set the time to the beginning of the day
 
   try {
     
     const upcomingEvents = await Event
-      .find({ date: { $gt: today } })
-      .select("title date location participants")
+      .find({ date: { $gte: today } })
+      .select("title date location participants status")
       .sort( { date: -1 } )
 
     res.status(200).json(upcomingEvents)
@@ -113,7 +115,7 @@ router.get("/:eventId", async (req, res, next) => {
       populate: {
         path: "sender",
         model: "User",
-        select: "firstName lastName profilePic"
+        select: "firstName lastName profilePic role"
       }
     })
 
@@ -136,12 +138,13 @@ router.get("/:eventId", async (req, res, next) => {
 router.put("/:eventId", isAdmin, async (req, res, next) => {
 
   const { eventId } = req.params
-  const { title, location, category, date } = req.body
+  const { title, location, category, date, time } = req.body
+  console.log(req.body)
 
   const isEventIdValid = validateMongoIdFormat(eventId, res, "Id de evento en formato incorrecto")
   if (!isEventIdValid) return
   
-  const areRequiredFieldsValid = validateRequiredFields(res, title, location, category, date)
+  const areRequiredFieldsValid = validateRequiredFields(res, title, location, category, date, time)
   if (!areRequiredFieldsValid) return
 
   let isDateFormatValid = validateDateFormat(res, date, "Formato de fecha invalido")
@@ -164,7 +167,8 @@ router.put("/:eventId", isAdmin, async (req, res, next) => {
       title,
       location,
       category,
-      date: dateFormatted,
+      date,
+      time
     })
 
     if (!updatedEvent) {
@@ -180,49 +184,25 @@ router.put("/:eventId", isAdmin, async (req, res, next) => {
 
 })
 
-// PATCH "/api/event/:eventId" - Updates event isCancelled to true (admin only)
-router.patch("/:eventId/cancel", isAdmin, async (req, res, next) => {
+// PATCH "/api/event/:eventId" - Updates event status (admin only)
+router.patch("/:eventId/status", isAdmin, async (req, res, next) => {
 
   const { eventId } = req.params
+  const { status } = req.body
 
   const isEventIdValid = validateMongoIdFormat(eventId, res, "Id de evento en formato incorrecto")
   if (!isEventIdValid) return
 
   try {
 
-    const updatedEvent = await Event.findByIdAndUpdate(eventId, {isCancelled: true})
+    const updatedEvent = await Event.findByIdAndUpdate(eventId, {status})
 
     if (!updatedEvent) {
       res.status(400).json({ errorMessage: "No hay eventos con ese id" })
       return
     }
 
-    res.status(202).json({ updatedEventId: updatedEvent?._id })
-    
-  } catch (error) {
-    next(error)
-  }
-
-})
-
-// PATCH "/api/event/:eventId" - Updates event isCancelled to false (admin only)
-router.patch("/:eventId/uncancel", isAdmin, async (req, res, next) => {
-
-  const { eventId } = req.params
-
-  const isEventIdValid = validateMongoIdFormat(eventId, res, "Id de evento en formato incorrecto")
-  if (!isEventIdValid) return
-
-  try {
-
-    const updatedEvent = await Event.findByIdAndUpdate(eventId, {isCancelled: false})
-
-    if (!updatedEvent) {
-      res.status(400).json({ errorMessage: "No hay eventos con ese id" })
-      return
-    }
-
-    res.status(202).json({ updatedEventId: updatedEvent?._id })
+    res.sendStatus(202)
     
   } catch (error) {
     next(error)
