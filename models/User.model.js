@@ -47,11 +47,11 @@ const userSchema = new Schema(
       enum: ["pending", "user", "admin"],
       default: "pending"
     },
-    profileIcon: {
+    icon: {
       type: String,
       default: "/src/assets/icons/paw-solid.svg"
     },
-    profileIconColor: {
+    iconColor: {
       type: String,
       default: "#FFFFFF"
     }

@@ -10,8 +10,8 @@ router.get("/", (req, res, next) => {
 const authRoutes = require("./auth.routes");
 router.use("/auth", authRoutes);
 
-const profileRoutes = require("./profile.routes");
-router.use("/profile", isAuthenticated, profileRoutes);
+const userRoutes = require("./user.routes");
+router.use("/user", isAuthenticated, userRoutes);
 
 const eventRoutes = require("./event.routes");
 router.use("/event", isAuthenticated, eventRoutes);

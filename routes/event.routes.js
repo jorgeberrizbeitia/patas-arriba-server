@@ -108,14 +108,14 @@ router.get("/:eventId", async (req, res, next) => {
     
     const eventDetails = await Event.findById(eventId)
     //.populate("creator", "name") //! check if needed by client
-    .populate("participants", "username fullName")
+    .populate("participants", "username fullName icon iconColor")
     .populate({
       path: "messages",
       model: "Message",
       populate: {
         path: "sender",
         model: "User",
-        select: "username fullName role"
+        select: "username fullName role icon iconColor"
       }
     })
 

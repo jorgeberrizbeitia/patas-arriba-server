@@ -4,12 +4,12 @@ const { isAdmin } = require("../middleware/auth.middleware");
 const validateMongoIdFormat = require("../utils/validateMongoIdFormat");
 const router = express.Router();
 
-// GET "/api/profile" - Returns a list of all users (only public info) (for admin purposes)
+// GET "/api/user" - Returns a list of all users (only public info) (for admin purposes)
 router.get("/", isAdmin, async (req, res, next) => {
 
   try {
     
-    const userList = await User.find().select("username role").sort({createdAt: -1})
+    const userList = await User.find().select("username role icon iconColor").sort({createdAt: -1})
     res.status(200).json(userList)
 
   } catch (error) {
@@ -18,13 +18,13 @@ router.get("/", isAdmin, async (req, res, next) => {
 
 })
 
-// GET "/api/profile/own" - Returns logged user information details 
+// GET "/api/user/own" - Returns logged user information details 
 router.get("/own", async (req, res, next) => {
 
   try {
     
-    const ownProfile = await User.findById(req.payload._id).select("email username fullName phoneCode phoneNumber profileIcon profileIconColor createdAt")
-    res.status(200).json(ownProfile)
+    const ownUserDetails = await User.findById(req.payload._id).select("email username fullName phoneCode phoneNumber role icon iconColor createdAt")
+    res.status(200).json(ownUserDetails)
 
   } catch (error) {
     next(error)
@@ -32,7 +32,7 @@ router.get("/own", async (req, res, next) => {
 
 })
 
-// GET "/api/profile/:userId" - Returns a specific user information details (only public info)
+// GET "/api/user/:userId" - Returns a specific user information details (only public info)
 router.get("/:userId", async (req, res, next) => {
 
   const { userId } = req.params
@@ -42,8 +42,8 @@ router.get("/:userId", async (req, res, next) => {
 
   try {
     
-    const userProfile = await User.findById(userId).select("email username fullName phoneCode phoneNumber role createdAt")
-    res.status(200).json(userProfile)
+    const userDetails = await User.findById(userId).select("email username fullName phoneCode phoneNumber role icon iconColor createdAt")
+    res.status(200).json(userDetails)
 
   } catch (error) {
     next(error)
@@ -51,13 +51,13 @@ router.get("/:userId", async (req, res, next) => {
 
 })
 
-// PATCH "/api/profile/profileIcon" - Updates logged user profile pic
-router.patch("/profileIcon", async (req, res, next) => {
+// PATCH "/api/user/icon" - Updates logged user icon & icon color
+router.patch("/icon", async (req, res, next) => {
   //* url in camelCase to allow for dynamic component in frontend
 
-  const { profileIcon, profileIconColor } = req.body
+  const { icon, iconColor } = req.body
 
-  if (!profileIcon || !profileIconColor ) {
+  if (!icon || !iconColor ) {
     res.status(400).json({ errorMessage: "Los campos deben estar llenos" });
     return;
   }
@@ -67,15 +67,17 @@ router.patch("/profileIcon", async (req, res, next) => {
 
   try {
     
-    const updatedUser = await User.findByIdAndUpdate(req.payload._id, { profileIcon, profileIconColor }, {new: true})
+    const updatedUser = await User.findByIdAndUpdate(req.payload._id, { icon, iconColor }, {new: true})
 
     if (!updatedUser) {
       res.status(400).send({errorMessage: "No hay usuarios con ese id"})
       return;
     }
 
-    res.status(202).json(updatedUser)
-    //todo remove password from updatedUser in all patch
+    const userClone = JSON.parse(JSON.stringify(updatedUser))
+    delete userClone.password // password removed for security
+
+    res.status(202).json(userClone) 
 
   } catch (error) {
     next(error)
@@ -83,7 +85,7 @@ router.patch("/profileIcon", async (req, res, next) => {
 
 })
 
-// PATCH "/api/profile/fullName" - Updates logged user fullName
+// PATCH "/api/user/fullName" - Updates logged user fullName
 router.patch("/fullName", async (req, res, next) => {
   //* url in camelCase to allow for dynamic component in frontend
 
@@ -109,7 +111,10 @@ router.patch("/fullName", async (req, res, next) => {
       return;
     }
 
-    res.status(202).json(updatedUser)
+    const userClone = JSON.parse(JSON.stringify(updatedUser))
+    delete userClone.password // password removed for security
+    
+    res.status(202).json(userClone) 
 
   } catch (error) {
     next(error)
@@ -117,9 +122,10 @@ router.patch("/fullName", async (req, res, next) => {
 
 })
 
-// PATCH "/api/profile/password" - Updates logged user password
+// PATCH "/api/user/password" - Updates logged user password
+//todo
 
-// PATCH "/api/profile/username" - Updates logged user username
+// PATCH "/api/user/username" - Updates logged user username
 router.patch("/username", async (req, res, next) => {
 
   const { username } = req.body
@@ -150,7 +156,10 @@ router.patch("/username", async (req, res, next) => {
       return;
     }
 
-    res.status(202).json(updatedUser)
+    const userClone = JSON.parse(JSON.stringify(updatedUser))
+    delete userClone.password // password removed for security
+    
+    res.status(202).json(userClone) 
 
   } catch (error) {
     next(error)
@@ -158,9 +167,10 @@ router.patch("/username", async (req, res, next) => {
 
 })
 
-// PATCH "/api/profile/phone" - Updates logged user phoneCode & phoneNumber
+// PATCH "/api/user/phone" - Updates logged user phoneCode & phoneNumber
+//todo
 
-// PATCH "/api/profile/:userId/user-role-validation" - Updates user role from "pending" to "user" (for admin purposes)
+// PATCH "/api/user/:userId/user-role-validation" - Updates user role from "pending" to "user" (for admin purposes)
 router.patch("/:userId/user-role-validation", isAdmin, async (req, res, next) => {
 
   const { userId } = req.params
@@ -170,14 +180,17 @@ router.patch("/:userId/user-role-validation", isAdmin, async (req, res, next) =>
 
   try {
     
-    const user = await User.findByIdAndUpdate(userId, { role: "user" }, {new: true})
+    const updatedUser = await User.findByIdAndUpdate(userId, { role: "user" }, {new: true})
 
-    if (!user) {
+    if (!updatedUser) {
       res.status(400).send({errorMessage: "No hay usuarios con ese id"})
       return;
     }
 
-    res.status(202).json(user)
+    const userClone = JSON.parse(JSON.stringify(updatedUser))
+    delete userClone.password // password removed for security
+    
+    res.status(202).json(userClone) 
 
   } catch (error) {
     next(error)
