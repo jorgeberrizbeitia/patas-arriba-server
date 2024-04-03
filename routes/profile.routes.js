@@ -9,7 +9,7 @@ router.get("/", isAdmin, async (req, res, next) => {
 
   try {
     
-    const userList = await User.find().select("username role profilePic").sort({createdAt: -1})
+    const userList = await User.find().select("username role").sort({createdAt: -1})
     res.status(200).json(userList)
 
   } catch (error) {
@@ -23,7 +23,7 @@ router.get("/own", async (req, res, next) => {
 
   try {
     
-    const ownProfile = await User.findById(req.payload._id).select("email username fullName phoneCode phoneNumber profilePic createdAt")
+    const ownProfile = await User.findById(req.payload._id).select("email username fullName phoneCode phoneNumber profileIcon profileIconColor createdAt")
     res.status(200).json(ownProfile)
 
   } catch (error) {
@@ -42,7 +42,7 @@ router.get("/:userId", async (req, res, next) => {
 
   try {
     
-    const userProfile = await User.findById(userId).select("email username fullName phoneCode phoneNumber profilePic role createdAt")
+    const userProfile = await User.findById(userId).select("email username fullName phoneCode phoneNumber role createdAt")
     res.status(200).json(userProfile)
 
   } catch (error) {
@@ -51,7 +51,37 @@ router.get("/:userId", async (req, res, next) => {
 
 })
 
-// PATCH "/api/profile/profilePic" - Updates logged user profile pic
+// PATCH "/api/profile/profileIcon" - Updates logged user profile pic
+router.patch("/profileIcon", async (req, res, next) => {
+  //* url in camelCase to allow for dynamic component in frontend
+
+  const { profileIcon, profileIconColor } = req.body
+
+  if (!profileIcon || !profileIconColor ) {
+    res.status(400).json({ errorMessage: "Los campos deben estar llenos" });
+    return;
+  }
+
+  //todo iconColor color validation
+  //todo icon enum validation
+
+  try {
+    
+    const updatedUser = await User.findByIdAndUpdate(req.payload._id, { profileIcon, profileIconColor }, {new: true})
+
+    if (!updatedUser) {
+      res.status(400).send({errorMessage: "No hay usuarios con ese id"})
+      return;
+    }
+
+    res.status(202).json(updatedUser)
+    //todo remove password from updatedUser in all patch
+
+  } catch (error) {
+    next(error)
+  }
+
+})
 
 // PATCH "/api/profile/fullName" - Updates logged user fullName
 router.patch("/fullName", async (req, res, next) => {

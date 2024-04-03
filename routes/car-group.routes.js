@@ -71,7 +71,7 @@ router.get("/list/:eventId", async (req, res, next) => {
     const carGroupsByEvent = await CarGroup
       .find({ event: eventId })
       .select("pickupLocation pickupCoordinates pickupTime roomAvailable members owner")
-      .populate("owner", "username fullName profilePic")
+      .populate("owner", "username fullName")
     res.status(200).json(carGroupsByEvent)
 
   } catch (error) {
@@ -92,15 +92,15 @@ router.get("/:carGroupId", async (req, res, next) => {
 
     const carGroupDetails = await CarGroup
       .findById(carGroupId)
-      .populate("owner", "username fullName phoneCode phoneNumber profilePic")
-      .populate("members", "username fullName phoneCode phoneNumber profilePic")
+      .populate("owner", "username fullName phoneCode phoneNumber")
+      .populate("members", "username fullName phoneCode phoneNumber")
       .populate({
         path: "messages",
         model: "Message",
         populate: {
           path: "sender",
           model: "User",
-          select: "username fullName profilePic"
+          select: "username fullName"
         }
       })
 
