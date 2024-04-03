@@ -14,9 +14,9 @@ const userSchema = new Schema(
       required: [true, "Username is required."],
       unique: true,
       lowercase: true,
+      trim: true,
       minLength: 3,
       maxLength: 15,
-      trim: true,
     },
     password: {
       type: String,
@@ -25,10 +25,10 @@ const userSchema = new Schema(
     fullName: {
       type: String,
       required: [true, "Full Name is required."],
+      lowercase: true,
+      trim: true,
       minLength: 3,
       maxLength: 30,
-      trim: true,
-      lowercase: true,
     },
     phoneCode: {
       type: Number,
