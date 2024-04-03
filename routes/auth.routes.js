@@ -23,21 +23,21 @@ router.post("/signup", async (req, res, next) => {
     return;
   }
 
-  const usernameRegex = /^[^\s]{1,30}$/;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  if (!emailRegex.test(email)) {
+    res.status(400).json({ errorMessage: "Correo electrónico con formato incorrecto" });
+    return;
+  }
+
+  const usernameRegex = /^[^\s]{3,15}$/;
   if (!usernameRegex.test(username)) {
     res.status(400).json({ errorMessage: "Nombre de Usuario no debe tener espacios y de 3 a 15 characteres" });
     return;
   }
   
-  const fullNameRegex = /^[a-zA-ZÀ-ÖØ-öØ-ÿ\s']{1,20}$/;
+  const fullNameRegex = /^[a-zA-ZÀ-ÖØ-öØ-ÿ\s']{3,30}$/;
   if (!fullNameRegex.test(fullName)) {
     res.status(400).json({ errorMessage: "Nombre Completo debe tener solo letras, espacios y de 3 a 30 caracteres" });
-    return;
-  }
-
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-  if (!emailRegex.test(email)) {
-    res.status(400).json({ errorMessage: "Correo electrónico con formato incorrecto" });
     return;
   }
 
@@ -47,9 +47,9 @@ router.post("/signup", async (req, res, next) => {
     return;
   }
 
-  const phoneNumberRegex = /^[0-9]{4,20}$/;
+  const phoneNumberRegex = /^[0-9]{7,15}$/;
   if (!phoneNumberRegex.test(phoneNumber)) {
-    res.status(400).json({ errorMessage: "Número telefónico solo debe contener dígitos numericos y de 4 a 20 dígitos" });
+    res.status(400).json({ errorMessage: "Número telefónico solo debe contener dígitos numericos y de 7 a 15 dígitos" });
     return;
   }
 
@@ -110,7 +110,7 @@ router.post("/login", async (req, res, next) => {
   
   try {
     
-    const foundUser = await User.findOne({$or: [{ email: credential, username: credential }]})
+    const foundUser = await User.findOne({$or: [{ email: credential}, {username: credential }]})
 
     if (!foundUser) {
       res.status(401).json({ errorField: "credential", errorMessage: "Usuario no encontrado con ese correo electrónico o nombre de usuario" });
