@@ -51,13 +51,82 @@ router.get("/:userId", async (req, res, next) => {
 
 })
 
-// PATCH "/api/profile/profile-pic" - Updates logged user profile pic
+// PATCH "/api/profile/profilePic" - Updates logged user profile pic
 
-// PATCH "/api/profile/full-name" - Updates logged user fullName
+// PATCH "/api/profile/fullName" - Updates logged user fullName
+router.patch("/fullName", async (req, res, next) => {
+  //* url in camelCase to allow for dynamic component in frontend
+
+  const { fullName } = req.body
+
+  if (!fullName ) {
+    res.status(400).json({ errorMessage: "El campo debe estar lleno" });
+    return;
+  }
+
+  const fullNameRegex = /^[a-zA-ZÀ-ÖØ-öØ-ÿ\s']{3,30}$/;
+  if (!fullNameRegex.test(fullName)) {
+    res.status(400).json({ errorMessage: "Solo letras, espacios y de 3 a 30 caracteres" });
+    return;
+  }
+
+  try {
+    
+    const updatedUser = await User.findByIdAndUpdate(req.payload._id, { fullName }, {new: true})
+
+    if (!updatedUser) {
+      res.status(400).send({errorMessage: "No hay usuarios con ese id"})
+      return;
+    }
+
+    res.status(202).json(updatedUser)
+
+  } catch (error) {
+    next(error)
+  }
+
+})
 
 // PATCH "/api/profile/password" - Updates logged user password
 
 // PATCH "/api/profile/username" - Updates logged user username
+router.patch("/username", async (req, res, next) => {
+
+  const { username } = req.body
+
+  if (!username ) {
+    res.status(400).json({ errorMessage: "El campo debe estar lleno" });
+    return;
+  }
+
+  const usernameRegex = /^[^\s]{3,15}$/;
+  if (!usernameRegex.test(username)) {
+    res.status(400).json({ errorMessage: "No debe tener espacios y de 3 a 15 characteres" });
+    return;
+  }
+
+  try {
+
+    const foundUserByUsername = await User.findOne({$and: [{ _id: {$ne: req.payload._id} }, { username }]});
+    if (foundUserByUsername) {
+      res.status(400).json({ errorField: "username", errorMessage: "Ya existe un usuario con ese nombre de usuario" });
+      return;
+    }
+    
+    const updatedUser = await User.findByIdAndUpdate(req.payload._id, { username }, {new: true})
+
+    if (!updatedUser) {
+      res.status(400).send({errorMessage: "No hay usuarios con ese id"})
+      return;
+    }
+
+    res.status(202).json(updatedUser)
+
+  } catch (error) {
+    next(error)
+  }
+
+})
 
 // PATCH "/api/profile/phone" - Updates logged user phoneCode & phoneNumber
 
