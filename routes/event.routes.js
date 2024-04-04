@@ -118,18 +118,13 @@ router.get("/:eventId", async (req, res, next) => {
       }
     })
 
-    //todo incluir plazas disponibles
-    //todo incluir si el usuario logeado se ha unido
-    //todo incluir si el usuario tiene un grupo de coche disponible
-
     if (!eventDetails) {
       res.status(400).send({errorMessage: "No hay eventos con ese id"})
       return;
     }
-    
+
     res.status(200).json(eventDetails)
     
-
   } catch (error) {
     next(error)
   }
@@ -197,7 +192,14 @@ router.patch("/:eventId/status", isAdmin, async (req, res, next) => {
 
   try {
 
-    const updatedEvent = await Event.findByIdAndUpdate(eventId, {status})
+    let updatedEvent;
+
+    if (status === "closed" || status === "open") {
+      updatedEvent = await Event.findByIdAndUpdate(eventId, {status})
+    } else if (status === "cancelled") {
+      // remueve a todos los integrantes si el evento es cancelado, sin embargo mantiene todos los grupos de coche y mensajes //? decidir luego como gestionar eso
+      updatedEvent = await Event.findByIdAndUpdate(eventId, {status, participants: []})
+    }
 
     if (!updatedEvent) {
       res.status(400).json({ errorMessage: "No hay eventos con ese id" })
@@ -222,14 +224,26 @@ router.patch("/:eventId/join", async (req, res, next) => {
 
   try {
 
-    //todo you can only join upcoming events and not canceled or closed
+    //todo you can't join past events
 
-    const updatedEvent = await Event.findByIdAndUpdate(eventId, { $addToSet: { participants: req.payload._id } })
+    const event = await Event.findById(eventId)
 
-    if (!updatedEvent) {
+    if (!event) {
       res.status(400).json({ errorMessage: "No hay eventos con ese id" })
       return
     }
+
+    if (event.status === "closed") {
+      res.status(400).json({ errorMessage: "No puedes unirte porque el evento está cerrado" })
+      return
+    }
+
+    if (event.status === "cancelled") {
+      res.status(400).json({ errorMessage: "No puedes unirte porque el evento está cancelado" })
+      return
+    }
+
+    await Event.findByIdAndUpdate(eventId, { $addToSet: { participants: req.payload._id } })
 
     res.sendStatus(202)
     

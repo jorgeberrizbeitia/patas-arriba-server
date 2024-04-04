@@ -28,6 +28,11 @@ router.post("/:eventId", async (req, res, next) => {
       return
     }
 
+    if (foundEvent.category !== "car-group") {
+      res.status(400).json({errorMessage: "Categoria de evento no permite crear grupos de coche"})
+      return
+    }
+
     const foundCarGroup = await CarGroup.findOne({$and: [{event: eventId}, {owner: req.payload._id}]})
     if (foundCarGroup) {
       res.status(400).json({errorMessage: "Grupo de coche ya creado por este usuario para este evento"})
@@ -101,6 +106,8 @@ router.get("/:carGroupId", async (req, res, next) => {
         }
       })
 
+    //todo populate the event and send to FE to display to which event is it for
+    
     if (!carGroupDetails) {
       res.status(400).json({errorMessage: "Grupo de coche no existe por ese id"})
       return
