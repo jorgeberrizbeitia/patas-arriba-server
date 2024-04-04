@@ -14,18 +14,11 @@ router.post("/:eventId", async (req, res, next) => {
   const { eventId } = req.params
   const { pickupCoordinates, pickupLocation, pickupTime, roomAvailable } = req.body
 
-  const areRequiredFieldsValid = validateRequiredFields(res, roomAvailable)
+  const areRequiredFieldsValid = validateRequiredFields(res, roomAvailable, pickupLocation, pickupTime)
   if (!areRequiredFieldsValid) return
-  //todo todos los campos deben ser obligatorios al crear
 
   const isEventIdValid = validateMongoIdFormat(eventId, res, "Id de evento en formato incorrecto")
   if (!isEventIdValid) return
-
-  //! removed as time is in string format
-  // if (pickupTime) {
-  //   let isDateFormatValid = validateDateFormat(res, pickupTime, "Formato de fecha invalido")
-  //   if (!isDateFormatValid) return
-  // }
 
   try {
 
@@ -40,6 +33,8 @@ router.post("/:eventId", async (req, res, next) => {
       res.status(400).json({errorMessage: "Grupo de coche ya creado por este usuario para este evento"})
       return
     }
+
+    //todo no puedes crear grupo de coche si estas en otro
     
     await CarGroup.create({ 
       pickupCoordinates,
@@ -49,6 +44,8 @@ router.post("/:eventId", async (req, res, next) => {
       owner: req.payload._id,
       event: eventId
     })
+
+    //todo maybe receive createdCar, validate 500 with problems creating car
 
     res.sendStatus(202)
 
@@ -71,7 +68,7 @@ router.get("/list/:eventId", async (req, res, next) => {
     const carGroupsByEvent = await CarGroup
       .find({ event: eventId })
       .select("pickupLocation pickupCoordinates pickupTime roomAvailable members owner")
-      .populate("owner", "username fullName")
+      .populate("owner", "username fullName icon iconColor")
     res.status(200).json(carGroupsByEvent)
 
   } catch (error) {
@@ -92,15 +89,15 @@ router.get("/:carGroupId", async (req, res, next) => {
 
     const carGroupDetails = await CarGroup
       .findById(carGroupId)
-      .populate("owner", "username fullName phoneCode phoneNumber")
-      .populate("members", "username fullName phoneCode phoneNumber")
+      .populate("owner", "username fullName phoneCode phoneNumber icon iconColor")
+      .populate("members", "username fullName phoneCode phoneNumber icon iconColor")
       .populate({
         path: "messages",
         model: "Message",
         populate: {
           path: "sender",
           model: "User",
-          select: "username fullName"
+          select: "username fullName icon iconColor"
         }
       })
 
@@ -133,36 +130,34 @@ router.put("/:carGroupId", async (req, res, next) => {
   const isCarGroupIdValid = validateMongoIdFormat(carGroupId, res, "Id de evento en formato incorrecto")
   if (!isCarGroupIdValid) return
 
-  const areRequiredFieldsValid = validateRequiredFields(res, pickupLocation, roomAvailable)
+  const areRequiredFieldsValid = validateRequiredFields(res, pickupLocation, roomAvailable, pickupTime)
   if (!areRequiredFieldsValid) return
 
-  if (pickupTime) {
-    let isDateFormatValid = validateDateFormat(res, pickupTime, "Formato de fecha invalido")
-    if (!isDateFormatValid) return
-  }
-
+  
   try {
-
+    
     const foundCarGroup = await CarGroup.findById(carGroupId)
-
+    
     if (!foundCarGroup) {
       res.status(400).json({ errorMessage: "No hay grupos de coche con ese id" })
       return
     }
-
+    
     if (foundCarGroup.owner != req.payload._id) {
       res.status(401).json({errorMessage: "No puedes editar este grupo de coche porque no eres el dueño"})
       return
     }
     
-    const updatedCarGroup = await CarGroup.findByIdAndUpdate(carGroupId, { 
+    //todo no puedes disminuir plazas disponibles si ya estan llenas
+
+    await CarGroup.findByIdAndUpdate(carGroupId, { 
       pickupCoordinates,
       pickupLocation,
       pickupTime,
       roomAvailable,
     })
 
-    res.status(202).json(updatedCarGroup) //! check frontend need
+    res.sendStatus(202)
   } catch(error) {
     next(error)
   }
@@ -199,7 +194,7 @@ router.patch("/:carGroupId/join", async (req, res, next) => {
     const event = await Event.findById(carGroup.event)
 
     if (!event || event.isCancelled) {
-      res.status(400).json({ errorMessage: "No te puedes unir al grupo de coche porque el evento de ese grupo de coche  no existe o ha sido cancelado" })
+      res.status(400).json({ errorMessage: "No te puedes unir al grupo de coche porque el evento de ese grupo de coche no existe o ha sido cancelado" })
       return
     }
 
@@ -246,7 +241,9 @@ router.patch("/:carGroupId/leave", async (req, res, next) => {
       return
     }
 
-    res.status(202).json({ updatedCarGroupId: updatedCarGroup?._id })
+    //todo enviar mensaje de que alguien se fue o crear notificacion
+
+    res.sendStatus(202)
     
   } catch (error) {
     next(error)
@@ -254,8 +251,10 @@ router.patch("/:carGroupId/leave", async (req, res, next) => {
 
 })
 
-// DELETE "/api/car-group/:carGroupId" - Returns a list of all car groups of that event
+// DELETE "/api/car-group/:carGroupId" - Attemps to delete a car-group
 router.delete("/:carGroupId", async (req, res, next) => {
+
+  //*IMPORTANT: car groups will not have a status to preserve data, instead, notifications will handle if a car-group a user was in was deleted
 
   const { carGroupId } = req.params
 
@@ -278,7 +277,8 @@ router.delete("/:carGroupId", async (req, res, next) => {
 
     await CarGroup.findByIdAndDelete(carGroupId)
 
-    //! notificacion a usuarios si se borra el grupo de coche aqui
+    //todo borrar todos los mensajes de ese grupo de coche
+    //todo notificacion a usuarios si se borra el grupo de coche aqui
 
     res.sendStatus(202)
 

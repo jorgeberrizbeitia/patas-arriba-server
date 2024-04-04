@@ -107,7 +107,6 @@ router.get("/:eventId", async (req, res, next) => {
   try {
     
     const eventDetails = await Event.findById(eventId)
-    //.populate("creator", "name") //! check if needed by client
     .populate("participants", "username fullName icon iconColor")
     .populate({
       path: "messages",
@@ -119,12 +118,15 @@ router.get("/:eventId", async (req, res, next) => {
       }
     })
 
+    //todo incluir plazas disponibles
+    //todo incluir si el usuario logeado se ha unido
+    //todo incluir si el usuario tiene un grupo de coche disponible
+
     if (!eventDetails) {
       res.status(400).send({errorMessage: "No hay eventos con ese id"})
       return;
     }
-
-    // ! check question for Jaime to see if unjoined users can see all chats & participants
+    
     res.status(200).json(eventDetails)
     
 
