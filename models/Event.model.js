@@ -8,6 +8,11 @@ const eventSchema = new Schema(
       trim: true,
       maxLength: 50
     },
+    category: {
+      type: String,
+      enum: ["recogida", "protectora", "mercadillo", "otro"],
+      default: "otro"
+    },
     description: {
       type: String
     },
@@ -17,39 +22,25 @@ const eventSchema = new Schema(
       trim: true,
       maxLength: 50
     },
-    coordinates: {
-      type: [Number],
-    },
     date: {
       type: Date,
       required: [true, "Date is required."]
     },
-    time: {
-      type: String,
-      required: [true, "Time is required."]
+    hasCarOrganization: {
+      type: Boolean,
     },
-    category: {
-      type: String,
-      enum: ["car-group", "no-car-group"],
-      required: [true, "Category is required"]
+    hasTaskAssignments: {
+      type: Boolean,
     },
-    creator: {
-      type: Schema.Types.ObjectId,
-      ref: "User"
-    },
-    participants: [{
-      type: Schema.Types.ObjectId,
-      ref: "User"
-    }],
-    messages: [{
-      type: Schema.Types.ObjectId,
-      ref: "Message"
-    }],
     status: {
       type: String,
+      enum: ["open", "closed", "cancelled"],
       default: "open",
-      enum: ["open", "closed", "cancelled"]
-    }
+    },
+    owner: {
+      type: Schema.Types.ObjectId,
+      ref: "User"
+    },
   },
   {
     timestamps: true,

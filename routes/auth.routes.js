@@ -14,7 +14,7 @@ const saltRounds = 10;
 // POST /api/auth/signup - Validates user data and creates user document in the DB
 router.post("/signup", async (req, res, next) => {
   const { email, username, password, fullName, phoneCode, phoneNumber } = req.body;
-  console.log(email, password, fullName, phoneCode, phoneNumber)
+  console.log(req.body)
 
   //todo check to use validateRequiredFields here
 
@@ -29,9 +29,9 @@ router.post("/signup", async (req, res, next) => {
     return;
   }
 
-  const usernameRegex = /^[^\s]{3,15}$/;
+  const usernameRegex = /^[^\s]{3,20}$/;
   if (!usernameRegex.test(username)) {
-    res.status(400).json({ errorMessage: "Nombre de Usuario no debe tener espacios y de 3 a 15 characteres" });
+    res.status(400).json({ errorMessage: "Nombre de Usuario no debe tener espacios y de 3 a 20 characteres" });
     return;
   }
   

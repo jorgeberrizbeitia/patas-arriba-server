@@ -16,6 +16,9 @@ router.use("/user", isAuthenticated, userRoutes);
 const eventRoutes = require("./event.routes");
 router.use("/event", isAuthenticated, eventRoutes);
 
+const attendeeRoutes = require("./attendee.routes");
+router.use("/attendee", isAuthenticated, attendeeRoutes);
+
 const carGroupRoutes = require("./car-group.routes");
 router.use("/car-group", isAuthenticated, carGroupRoutes);
 

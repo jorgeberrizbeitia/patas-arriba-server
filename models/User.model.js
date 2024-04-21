@@ -16,7 +16,7 @@ const userSchema = new Schema(
       lowercase: true,
       trim: true,
       minLength: 3,
-      maxLength: 15,
+      maxLength: 20,
     },
     password: {
       type: String,
@@ -32,7 +32,7 @@ const userSchema = new Schema(
     },
     phoneCode: {
       type: Number,
-      required: [true, "Phone code is required."],
+      required: [true, "Phone Code is required."],
       default: 34,
       max: 999
     },
@@ -44,7 +44,7 @@ const userSchema = new Schema(
     },
     role: {
       type: String,
-      enum: ["pending", "user", "admin"],
+      enum: ["pending", "user", "admin", "blocked"],
       default: "pending"
     },
     icon: {
