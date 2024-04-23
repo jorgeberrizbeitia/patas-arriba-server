@@ -10,7 +10,7 @@ const eventSchema = new Schema(
     },
     category: {
       type: String,
-      enum: ["recogida", "protectora", "mercadillo", "otro"],
+      enum: ["protectora", "recogida", "mercadillo", "otro"],
       default: "otro"
     },
     description: {

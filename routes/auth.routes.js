@@ -14,7 +14,6 @@ const saltRounds = 10;
 // POST /api/auth/signup - Validates user data and creates user document in the DB
 router.post("/signup", async (req, res, next) => {
   const { email, username, password, fullName, phoneCode, phoneNumber } = req.body;
-  console.log(req.body)
 
   //todo check to use validateRequiredFields here
 
@@ -124,7 +123,7 @@ router.post("/login", async (req, res, next) => {
     }
 
     if (foundUser.role === "pending") {
-      res.status(401).json({ errorField: "role", errorMessage: "Usuario sin permisos para entrar, contacte a un admin para solicitar permiso" });
+      res.status(401).json({ errorField: "role", errorMessage: "Usuario sin permisos para entrar, contacta a un fundador de Patas Arriba para habilitar tu usuario" });
       return;
     }
     //todo telefono de acceso para solicitar permiso?

@@ -7,7 +7,8 @@ const Attendee = require("../models/Attendee.model")
 
 const validateMongoIdFormat = require("../utils/validateMongoIdFormat")
 const validateRequiredFields = require("../utils/validateRequiredFields")
-const validateDateFormat = require("../utils/validateDateFormat")
+const validateDateFormat = require("../utils/validateDateFormat");
+const Message = require("../models/Message.model");
 
 // POST "/api/car-group/:eventId" - Create a new car group from an event id
 router.post("/:eventId", async (req, res, next) => {
@@ -15,8 +16,9 @@ router.post("/:eventId", async (req, res, next) => {
   const { eventId } = req.params
   const { roomAvailable, pickupLocation, pickupTime, carColor, carBrand } = req.body
 
-  const areRequiredFieldsValid = validateRequiredFields(res, roomAvailable, pickupLocation, pickupTime, carColor, carBrand)
-  if (!areRequiredFieldsValid) return
+  // const areRequiredFieldsValid = validateRequiredFields(res, roomAvailable, pickupLocation, pickupTime, carColor, carBrand)
+  // if (!areRequiredFieldsValid) return
+  //todo testing without required as to allow users to
 
   const isEventIdValid = validateMongoIdFormat(eventId, res, "Id de evento en formato incorrecto")
   if (!isEventIdValid) return
@@ -36,7 +38,6 @@ router.post("/:eventId", async (req, res, next) => {
     }
 
     const foundAttendee = await Attendee.findOne({event: eventId, user: req.payload._id})
-    console.log(foundAttendee)
     if (!foundAttendee) {
       res.status(400).json({errorMessage: "No puedes crear grupo de coche porque no perteneces a este evento"})
       return
@@ -110,7 +111,7 @@ router.get("/:carGroupId", async (req, res, next) => {
       .findById(carGroupId)
       .populate("owner", "username fullName phoneCode phoneNumber icon iconColor")
       .populate("passengers", "username fullName phoneCode phoneNumber icon iconColor")
-      .populate("event", "title location date time")
+      .populate("event", "title location date time status")
     
     if (!carGroupDetails) {
       res.status(400).json({errorMessage: "Grupo de coche no existe por ese id"})
@@ -124,7 +125,11 @@ router.get("/:carGroupId", async (req, res, next) => {
       return
     }
 
-    res.status(200).json(carGroupDetails)
+    const messages = await Message
+    .find({relatedType: "car-group", relatedId: carGroupDetails._id})
+    .populate("sender", "username fullName icon iconColor")
+
+    res.status(200).json({carGroupDetails, messages})
 
   } catch (error) {
     next(error)
@@ -161,7 +166,7 @@ router.put("/:carGroupId", async (req, res, next) => {
     const newRoomAvailableWithPassangers = roomAvailable - foundCarGroup.passengers.length
 
     if (newRoomAvailableWithPassangers < 0) {
-      res.status(401).json({errorMessage: "No puedes reducir la cantidad de plazas del coche porque ya estan llenas. contacta a un pasajero o elimina el grupo de coche"})
+      res.status(400).json({errorMessage: "No puedes reducir la cantidad de plazas de coche porque ya estan llenas. Si hay un error, intenta eliminar el grupo de coche, contactar a los pasajeros para que busquen otro coche o contactar al organizador del evento para que te ayude con los cambios."})
       return
     }
 
@@ -289,7 +294,7 @@ router.delete("/:carGroupId", async (req, res, next) => {
 
   const { carGroupId } = req.params
 
-  const isCarGroupIdValid = validateMongoIdFormat(carGroupId, res, "Id de evento en formato incorrecto")
+  const isCarGroupIdValid = validateMongoIdFormat(carGroupId, res, "Id de grupo de coche en formato incorrecto")
   if (!isCarGroupIdValid) return
 
   try {
@@ -312,7 +317,7 @@ router.delete("/:carGroupId", async (req, res, next) => {
     }
 
     if (foundCarGroup.event.status === "closed") {
-      res.status(400).json({ errorMessage: "Este evento está cerrado, no puedes borrar el grupo de coche. Contacta a un Admin o el creador del evento para poder borrarlo" })
+      res.status(400).json({ errorMessage: "Este evento está cerrado, no puedes borrar el grupo de coche. Contacta a un Admin o el organizador del evento para poder borrarlo" })
       return
     }
 

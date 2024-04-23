@@ -2,14 +2,13 @@ const express = require("express");
 const router = express.Router();
 
 const Message = require("../models/Message.model");
-const Event = require("../models/Event.model");
 const CarGroup = require("../models/CarGroup.model");
 
 const validateMongoIdFormat = require("../utils/validateMongoIdFormat")
 const validateRequiredFields = require("../utils/validateRequiredFields");
 const Attendee = require("../models/Attendee.model");
 
-// POST "/api/message/:eventId/event" - Creates a new message in an event or car group
+// POST "/api/message/:relatedType/:relatedId" - Creates a new message in an event or car group
 router.post("/:relatedType/:relatedId", async (req, res, next) => {
 
   const { relatedType, relatedId } = req.params
@@ -70,7 +69,35 @@ router.post("/:relatedType/:relatedId", async (req, res, next) => {
 
 })
 
-// DELETE "/api/message/:messageId" - Updates message to deleted (only owner or admin)
+// GET "/api/message/:relatedType/:relatedId" - Finds all messages of an event or car group
+router.get("/:relatedType/:relatedId", async (req, res, next) => {
+
+  const { relatedType, relatedId } = req.params
+
+  const isIdValid = validateMongoIdFormat(relatedId, res, "Id de evento o grupo de coche en formato incorrecto")
+  if (!isIdValid) return
+
+  const allowedRelatedTypes = ["event", "car-group"]
+  if (allowedRelatedTypes.includes(relatedType) === false) {
+    res.status(400).json({ errorMessage: "Tipo de relación incorrecta. Envia 'event' o 'car-group' dependiendo de donde quieres crear un mensaje"})
+    return
+  }
+
+  try {
+    
+    const messages = await Message
+    .find({ relatedType, relatedId })
+    .populate("sender", "username fullName icon iconColor role")
+
+    res.status(200).send(messages)
+
+  } catch (error) {
+    next(error)
+  }
+
+})
+
+// DELETE "/api/message/:messageId/delete" - Updates message to deleted (only owner or admin)
 router.patch("/:messageId/delete", async (req, res, next) => {
 
   const { messageId } = req.params
@@ -86,7 +113,7 @@ router.patch("/:messageId/delete", async (req, res, next) => {
         sender: req.payload._id
       }, {
         isDeleted: true,
-        text: "Mensaje Borrado"
+        text: "Mensaje eliminado"
       })
       if (!deletedMessage) {
         res.status(400).json({ errorMessage: "Mensaje no encontrado con ese id o no tienes permisos para borrarlo" })

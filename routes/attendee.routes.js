@@ -20,7 +20,6 @@ router.post("/:eventId", async (req, res, next) => {
 
     const foundEvent = await Event.findById(eventId)
 
-    //todo you can't join past events
     const today = new Date()
     const eventDate = new Date(foundEvent.date)
 
@@ -51,16 +50,40 @@ router.post("/:eventId", async (req, res, next) => {
       return
     }
 
-    await Attendee.create({
+    const newAttendee = await Attendee.create({
       user: req.payload._id,
       event: eventId,
     })
 
-    res.sendStatus(202)
+    const attendee = await Attendee.findById(newAttendee._id).populate("user", "username fullName icon iconColor") 
+    //* above so the FE doesn't need to make another request for updated data
+
+    res.status(201).send(attendee)
     
   } catch (error) {
     next(error)
   }
+})
+
+router.get("/:eventId", async (req, res, next) => {
+
+  const { eventId } = req.params
+
+  const isEventIdValid = validateMongoIdFormat(eventId, res, "Id de evento en formato incorrecto")
+  if (!isEventIdValid) return
+
+  try {
+    
+    const attendees = await Attendee
+    .find({event: eventId})
+    .populate("user", "username fullName icon iconColor")
+
+    res.status(200).send(attendees)
+
+  } catch (error) {
+    next(error)
+  }
+
 })
 
 // DELETE "/api/attendee/:attendeeId" - delete or update attendee document for logged user and event. Also updates car group.
@@ -111,17 +134,16 @@ router.delete("/:eventId", async (req, res, next) => {
   } catch (error) {
     next(error)
   }
-
 })
 
-//PATCH "/api/attendee/:attendeeId/cancel" - admin updates status of attendee
-router.patch("/:attendeeId/status", isAdmin, async (req, res, next) => {
+//PATCH "/api/attendee/:attendeeId/status" - admin updates status of attendee
+router.patch("/:attendeeId/attendance", isAdmin, async (req, res, next) => {
 
   const { attendeeId } = req.params
-  const { status } = req.body
+  const { attendance } = req.body
 
-  const allowedStatusFormats = ["pending", "show", "no-show", "cancelled"]
-  if (!allowedStatusFormats.includes(status)) {
+  const allowedAttendanceFormats = ["pending", "show", "no-show", "excused"]
+  if (!allowedAttendanceFormats.includes(attendance)) {
     res.status(400).json({ errorMessage: "Valor de status incorrecto" });
     return;
   }
@@ -132,7 +154,29 @@ router.patch("/:attendeeId/status", isAdmin, async (req, res, next) => {
   if (!isIdValid) return
 
   //* if the event was closed it will set attendee status to cancelled (only if event is closed)
-  const updatedAttendee = await Attendee.findByIdAndUpdate(attendeeId, { status })
+  const updatedAttendee = await Attendee.findByIdAndUpdate(attendeeId, { attendance })
+
+  if (!updatedAttendee) {
+    res.status(400).json({ errorMessage: "Participación de usuario no encontrada para este evento" })
+    return
+  }
+
+  res.sendStatus(202)
+
+})
+
+//PATCH "/api/attendee/:attendeeId/task" - admin updates task of attendee
+router.patch("/:attendeeId/task", isAdmin, async (req, res, next) => {
+
+  const { attendeeId } = req.params
+  const { task } = req.body
+
+  //todo if event is open do not allow change in status. check if worth doing a second DB call.
+
+  const isIdValid = validateMongoIdFormat(attendeeId, res, "Id de participación en formato incorrecto")
+  if (!isIdValid) return
+
+  const updatedAttendee = await Attendee.findByIdAndUpdate(attendeeId, { task })
 
   if (!updatedAttendee) {
     res.status(400).json({ errorMessage: "Participación de usuario no encontrada para este evento" })

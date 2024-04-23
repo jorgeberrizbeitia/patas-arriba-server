@@ -14,16 +14,14 @@ const validateRequiredFields = require("../utils/validateRequiredFields");
 // POST "/api/event" - Creates a new event (admin only)
 router.post("/", isAdmin, async (req, res, next) => {
 
-  const { title, category, description, location, date, time, hasCarOrganization, hasTaskAssignments} = req.body
+  const { title, category, description, location, date, hasCarOrganization, hasTaskAssignments} = req.body
 
   //todo validate can't create events more than 2 months in advance due to messages and car groups only lasting 90 days.
 
-  const areRequiredFieldsValid = validateRequiredFields(res, title, location, category, date, time)
+  const areRequiredFieldsValid = validateRequiredFields(res, title, location, category, date)
   if (!areRequiredFieldsValid) return
 
-  const dateFormatted = `${date}T${time}:00` //! convert this in frontend, then use new Date(here)
-
-  let isDateFormatValid = validateDateFormat(res, dateFormatted, "Formato de fecha invalido")
+  let isDateFormatValid = validateDateFormat(res, date, "Formato de fecha invalido")
   if (!isDateFormatValid) return
 
   // todo see how to create validation function for this
@@ -45,11 +43,10 @@ router.post("/", isAdmin, async (req, res, next) => {
       category, 
       description, 
       location, 
-      date: new Date(dateFormatted), 
-      // time, 
+      date,
       hasCarOrganization, 
       hasTaskAssignments,
-      creator: req.payload._id
+      owner: req.payload._id
     })
 
     if (!createdEvent) {
@@ -73,7 +70,7 @@ router.get("/", async (req, res, next) => {
   if (req.query.upcoming) {
     //* when only upcoming are shown
     const today = new Date()
-    today.setHours(0, 0, 0, 0); // Set the time to the beginning of the day
+    // today.setHours(0, 0, 0, 0); // Set the time to the beginning of the day
     query.date = { $gte: today }
   }
 
@@ -82,7 +79,7 @@ router.get("/", async (req, res, next) => {
     let allEvents = await Event
       .find(query)
       .select("title category location date time status")
-      .sort({date: -1})
+      .sort({date: 1})
 
     const allEventIds = allEvents.map((event) => event._id)
 
@@ -105,7 +102,7 @@ router.get("/", async (req, res, next) => {
 
 })
 
-// GET /api/event/:eventId - Returns details of an event (all data including carGroups, to see if the user has joined one)
+// GET /api/event/:eventId - Returns details of an event (all data including carGroups, attendees and messages)
 router.get("/:eventId", async (req, res, next) => {
 
   const { eventId } = req.params
@@ -131,14 +128,42 @@ router.get("/:eventId", async (req, res, next) => {
     const carGroups = await CarGroup
     .find({event: eventDetails._id})
     .select("roomAvailable passengers owner")
+    .populate("owner", "username fullName icon iconColor")
 
     const messages = await Message
     .find({relatedType: "event", relatedId: eventDetails._id})
-    .populate("sender", "username fullName icon iconColor")
+    .populate("sender", "username fullName icon iconColor role")
     
     eventDetails = JSON.parse(JSON.stringify(eventDetails))
+    eventDetails.attendees = attendees
 
     res.status(200).json({eventDetails, attendees, carGroups, messages})
+    
+  } catch (error) {
+    next(error)
+  }
+
+})
+
+// GET /api/event/:eventId - Returns only the details of an event for updating purposes
+router.get("/:eventId/edit", async (req, res, next) => {
+
+  const { eventId } = req.params
+
+  const isEventIdValid = validateMongoIdFormat(eventId, res, "Id de evento en formato incorrecto")
+  if (!isEventIdValid) return
+
+  try {
+    
+    let eventDetails = await Event
+    .findById(eventId)
+    
+    if (!eventDetails) {
+      res.status(400).send({errorMessage: "No hay eventos con ese id"})
+      return;
+    }
+
+    res.status(200).json(eventDetails)
     
   } catch (error) {
     next(error)
@@ -150,19 +175,17 @@ router.get("/:eventId", async (req, res, next) => {
 router.put("/:eventId", isAdmin, async (req, res, next) => {
 
   const { eventId } = req.params
-  const { title, category, description, location, date, time, hasCarOrganization, hasTaskAssignments} = req.body
-
+  const { title, category, location, date, hasCarOrganization, hasTaskAssignments} = req.body
   
   const isEventIdValid = validateMongoIdFormat(eventId, res, "Id de evento en formato incorrecto")
   if (!isEventIdValid) return
   
-  const areRequiredFieldsValid = validateRequiredFields(res, title, category, location, date, time)
-  //todo check validateRequiredFields doesn't accept booleans (hasCarOrganization, hasTaskAssignments)
-  if (!areRequiredFieldsValid) return
+  const areRequiredFieldsValid = validateRequiredFields(res, title, category, location, date)
+  //! hasCarOrganization and hasTaskAssignments do not work with validateRequiredFields
 
-  const dateFormatted = `${date}T${time}:00` //! convert this in frontend, then use new Date(here)
+  if (!areRequiredFieldsValid) return
   
-  let isDateFormatValid = validateDateFormat(res, dateFormatted, "Formato de fecha invalido")
+  let isDateFormatValid = validateDateFormat(res, date, "Formato de fecha invalido")
   if (!isDateFormatValid) return
 
   if (title.length > 50 || title.length > 50) {
@@ -181,10 +204,8 @@ router.put("/:eventId", isAdmin, async (req, res, next) => {
     const updatedEvent = await Event.findByIdAndUpdate(eventId, {
       title, 
       category, 
-      description, 
       location, 
-      date: new Date(dateFormatted), 
-      // time, 
+      date,
       hasCarOrganization, 
       hasTaskAssignments
     })
@@ -194,7 +215,7 @@ router.put("/:eventId", isAdmin, async (req, res, next) => {
       return
     }
 
-    res.status(202).json({ updatedEventId: updatedEvent?._id })
+    res.status(202).json({ updatedEventId: updatedEvent._id })
 
   } catch (error) {
     next(error)
@@ -202,7 +223,7 @@ router.put("/:eventId", isAdmin, async (req, res, next) => {
 
 })
 
-// PATCH "/api/event/:eventId" - Updates event status (admin only)
+// PATCH "/api/event/:eventId/status" - Updates event status (admin only)
 router.patch("/:eventId/status", isAdmin, async (req, res, next) => {
 
   const { eventId } = req.params
@@ -236,6 +257,32 @@ router.patch("/:eventId/status", isAdmin, async (req, res, next) => {
 
 })
 
+// PATCH "/api/event/:eventId/description" - Updates event description (admin only)
+router.patch("/:eventId/description", isAdmin, async (req, res, next) => {
+
+  const { eventId } = req.params
+  const { description } = req.body
+
+  const isEventIdValid = validateMongoIdFormat(eventId, res, "Id de evento en formato incorrecto")
+  if (!isEventIdValid) return
+
+  try {
+
+    let updatedEvent = await Event.findByIdAndUpdate(eventId, { description })
+
+    if (!updatedEvent) {
+      res.status(400).json({ errorMessage: "No hay eventos con ese id" })
+      return
+    }
+
+    res.sendStatus(202)
+    
+  } catch (error) {
+    next(error)
+  }
+
+})
+
 // DELETE "/api/event" - Creates a new event (admin only) also deletes all car groups and messages from this event
 router.delete("/:eventId", isAdmin, async (req, res, next) => {
 
@@ -253,8 +300,9 @@ router.delete("/:eventId", isAdmin, async (req, res, next) => {
       return
     }
 
+    await Attendee.deleteMany({ event: deletedEvent._id })
     await CarGroup.deleteMany({ event: deletedEvent._id }) // delete all car groups from that event
-    await Message.deleteMany({ _id: { $in: deletedEvent.messages } }) // delete all messages from that event
+    await Message.deleteMany({ relatedType: "event", relatedId: deletedEvent._id }) // delete all messages from that event
 
     // ! note to test above when creating messages and carGroups
 

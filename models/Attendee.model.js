@@ -10,15 +10,15 @@ const attendeeSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "Event"
     },
-    status: {
+    attendance: {
       type: String,
-      enum: ["pending", "show", "no-show", "cancelled"],
+      enum: ["pending", "show", "no-show", "excused"],
       default: "pending",
       //* status when event has been closed to determine user participation set by admin
     },
     task: {
       type: String,
-      maxLength: 20
+      maxLength: 50
       //* assigned by admin only
     },
     willArriveOnMyOwn: {

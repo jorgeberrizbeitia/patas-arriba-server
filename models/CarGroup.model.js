@@ -4,26 +4,23 @@ const carGroupSchema = new Schema(
   {
     roomAvailable: {
       type: Number,
-      required: true
+      max: 10,
     },
     pickupLocation: {
       type: String,
-      required: [true, "Pickup Location is required."],
       trim: true,
       maxLength: 200
     },
     pickupTime: {
       type: String,
-      required: true
+      maxLength: 10
     },
     carColor: {
       type: String,
-      required: [true, "Car Color is required."],
       maxLength: 50
     },
     carBrand: {
       type: String,
-      required: [true, "Car Brand is required."],
       maxLength: 50
     },
     isCancelled: {
