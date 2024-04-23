@@ -127,7 +127,7 @@ router.get("/:carGroupId", async (req, res, next) => {
 
     const messages = await Message
     .find({relatedType: "car-group", relatedId: carGroupDetails._id})
-    .populate("sender", "username fullName icon iconColor")
+    .populate("sender", "username fullName icon iconColor role")
 
     res.status(200).json({carGroupDetails, messages})
 

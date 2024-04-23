@@ -70,7 +70,8 @@ router.get("/", async (req, res, next) => {
   if (req.query.upcoming) {
     //* when only upcoming are shown
     const today = new Date()
-    // today.setHours(0, 0, 0, 0); // Set the time to the beginning of the day
+    today.setHours(0, 0, 0, 0); 
+    //* Above will include events for the same day. FE and BE won't allow them to join if they are in the last a few hours.
     query.date = { $gte: today }
   }
 
@@ -303,6 +304,8 @@ router.delete("/:eventId", isAdmin, async (req, res, next) => {
     await Attendee.deleteMany({ event: deletedEvent._id })
     await CarGroup.deleteMany({ event: deletedEvent._id }) // delete all car groups from that event
     await Message.deleteMany({ relatedType: "event", relatedId: deletedEvent._id }) // delete all messages from that event
+
+    //todo also need to delete all messages of type car-group for every car-group that was created for the event
 
     // ! note to test above when creating messages and carGroups
 
