@@ -42,7 +42,7 @@ router.get("/:userId", async (req, res, next) => {
 
   try {
     
-    const userDetails = await User.findById(userId).select("email username fullName phoneCode phoneNumber role icon iconColor createdAt")
+    const userDetails = await User.findById(userId).select("username fullName phoneCode phoneNumber role icon iconColor createdAt")
     res.status(200).json(userDetails)
 
   } catch (error) {
