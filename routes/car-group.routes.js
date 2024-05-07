@@ -120,8 +120,8 @@ router.get("/:carGroupId", async (req, res, next) => {
 
     const isUserInCarGroup = carGroupDetails.passengers.some((passenger) => passenger._id == req.payload._id)
    
-    if (carGroupDetails.owner._id != req.payload._id && !isUserInCarGroup) {
-      res.status(400).json({errorMessage: "No perteneces a este grupo de coche como dueño o como miembro"})
+    if (req.payload.role !== "admin" && carGroupDetails.owner._id != req.payload._id && !isUserInCarGroup) {
+      res.status(400).json({errorMessage: "No perteneces a este grupo de coche como dueño o como miembro, o eres admin"})
       return
     }
 

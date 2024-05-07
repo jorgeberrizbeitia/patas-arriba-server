@@ -130,6 +130,7 @@ router.get("/:eventId", async (req, res, next) => {
     .find({event: eventDetails._id})
     .select("roomAvailable passengers owner")
     .populate("owner", "username fullName icon iconColor")
+    .populate("passengers", "username fullName icon iconColor")
 
     const messages = await Message
     .find({relatedType: "event", relatedId: eventDetails._id})
