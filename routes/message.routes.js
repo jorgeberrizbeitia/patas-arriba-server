@@ -43,8 +43,8 @@ router.post("/:relatedType/:relatedId", async (req, res, next) => {
         res.status(400).json({ errorMessage: "No hay grupos de coche con ese id" })
         return
       }
-      if (carGroup.owner != req.payload._id && carGroup.passengers.includes(req.payload._id) === false) {
-        res.status(400).json({ errorMessage: "No puedes crear mensajes en un grupo de coche al que no perteneces" })
+      if (req.payload.role !== "admin" && carGroup.owner != req.payload._id && carGroup.passengers.includes(req.payload._id) === false) {
+        res.status(400).json({ errorMessage: "No puedes crear mensajes en un grupo de coche al que no perteneces, o no eres admin" })
         return
       }
     }
