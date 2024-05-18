@@ -54,6 +54,12 @@ router.post("/", isAdmin, async (req, res, next) => {
       return
     }
 
+    //* below so the organizer automatically joins the created event
+    await Attendee.create({
+      user: req.payload._id,
+      event: createdEvent._id,
+    })
+
     res.status(201).json({ createdEventId: createdEvent?._id })
 
   } catch (error) {
@@ -128,7 +134,7 @@ router.get("/:eventId", async (req, res, next) => {
 
     const carGroups = await CarGroup
     .find({event: eventDetails._id})
-    .select("roomAvailable passengers owner")
+    .select("roomAvailable passengers owner pickupLocation")
     .populate("owner", "username fullName icon iconColor")
     .populate("passengers", "username fullName icon iconColor")
 
