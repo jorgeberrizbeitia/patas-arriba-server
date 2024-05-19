@@ -9,7 +9,8 @@ router.get("/", isOrganizerOrAdmin, async (req, res, next) => {
 
   try {
     
-    const userList = await User.find().select("username role icon iconColor").sort({createdAt: -1})
+    const userList = await User.find().select("username fullName role icon iconColor").sort({createdAt: -1})
+    //* fullName added so admin/organizer can search by fullName
     res.status(200).json(userList)
 
   } catch (error) {
