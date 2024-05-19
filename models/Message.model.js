@@ -6,7 +6,7 @@ const messageSchema = new Schema(
       type: String,
       required: [true, "Text is required."],
       trim: true,
-      maxLength: 140
+      maxLength: 300
     },
     sender: {
       type: Schema.Types.ObjectId,
