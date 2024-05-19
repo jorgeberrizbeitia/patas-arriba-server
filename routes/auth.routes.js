@@ -136,7 +136,7 @@ router.post("/login", async (req, res, next) => {
 
     const authToken = jwt.sign(payload, process.env.TOKEN_SECRET, {
       algorithm: "HS256",
-      expiresIn: "7w",
+      expiresIn: "7w", //! cambiar a 14 días luego que se pueda reestablecer contraseña.
     });
 
     res.status(200).json({ authToken: authToken });

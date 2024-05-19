@@ -1,11 +1,11 @@
 const express = require("express");
 const User = require("../models/User.model");
-const { isAdmin } = require("../middleware/auth.middleware");
+const { isOrganizerOrAdmin } = require("../middleware/auth.middleware");
 const validateMongoIdFormat = require("../utils/validateMongoIdFormat");
 const router = express.Router();
 
-// GET "/api/user" - Returns a list of all users (only public info) (for admin purposes)
-router.get("/", isAdmin, async (req, res, next) => {
+// GET "/api/user" - Returns a list of all users (only public info) (for organizer or admin purposes)
+router.get("/", isOrganizerOrAdmin, async (req, res, next) => {
 
   try {
     
@@ -170,8 +170,8 @@ router.patch("/username", async (req, res, next) => {
 // PATCH "/api/user/phone" - Updates logged user phoneCode & phoneNumber
 //todo
 
-// PATCH "/api/user/:userId/user-role-validation" - Updates user role from "pending" to "user" (for admin purposes)
-router.patch("/:userId/user-role-validation", isAdmin, async (req, res, next) => {
+// PATCH "/api/user/:userId/user-role-validation" - Updates user role from "pending" to "user" (only organizer or admin)
+router.patch("/:userId/user-role-validation", isOrganizerOrAdmin, async (req, res, next) => {
 
   const { userId } = req.params
 
@@ -197,5 +197,8 @@ router.patch("/:userId/user-role-validation", isAdmin, async (req, res, next) =>
   }
 
 })
+
+// PATCH "/api/user/:userId/user-role/:role" - Updates user role to "user", "organizer" or "blocked" (only admin)
+//todo
 
 module.exports = router;

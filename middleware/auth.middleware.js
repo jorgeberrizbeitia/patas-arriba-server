@@ -12,6 +12,14 @@ function isAuthenticated(req, res, next) {
   }
 }
 
+function isOrganizerOrAdmin(req, res, next) {
+  if (req.payload?.role === "organizer" || req.payload?.role === "admin") {
+    next()
+  } else {
+    res.status(401).json("Acceso solo para organizadores or admin")
+  }
+}
+
 function isAdmin(req, res, next) {
   if (req.payload?.role === "admin") {
     next()
@@ -22,5 +30,6 @@ function isAdmin(req, res, next) {
 
 module.exports = {
   isAuthenticated,
+  isOrganizerOrAdmin,
   isAdmin
 }

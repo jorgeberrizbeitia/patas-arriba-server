@@ -29,7 +29,7 @@ router.post("/:relatedType/:relatedId", async (req, res, next) => {
 
   try {
 
-    if (relatedType === "event") {
+    if (relatedType === "event" && req.payload.role !== "admin") {
       const attendee = await Attendee.findOne({event: relatedId, user: req.payload._id})
       if (!attendee) {
         res.status(400).json({ errorMessage: "No se ha conseguido evento con ese id o no te has unido al evento" })
@@ -43,8 +43,8 @@ router.post("/:relatedType/:relatedId", async (req, res, next) => {
         res.status(400).json({ errorMessage: "No hay grupos de coche con ese id" })
         return
       }
-      if (req.payload.role !== "admin" && carGroup.owner != req.payload._id && carGroup.passengers.includes(req.payload._id) === false) {
-        res.status(400).json({ errorMessage: "No puedes crear mensajes en un grupo de coche al que no perteneces, o no eres admin" })
+      if (req.payload.role !== "organizer" && req.payload.role !== "admin" && carGroup.owner != req.payload._id && carGroup.passengers.includes(req.payload._id) === false) {
+        res.status(400).json({ errorMessage: "No puedes crear mensajes en un grupo de coche al que no perteneces, o no eres organizador/admin" })
         return
       }
     }
@@ -121,6 +121,7 @@ router.patch("/:messageId/delete", async (req, res, next) => {
       }
     } 
     
+    // below so admins can delete any messages
     else if (req.payload.role === "admin") {
       const deletedMessage = await Message.findByIdAndUpdate(messageId, {
         isDeleted: true,

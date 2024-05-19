@@ -14,17 +14,17 @@ const attendeeSchema = new Schema(
       type: String,
       enum: ["pending", "show", "no-show", "excused"],
       default: "pending",
-      //* status when event has been closed to determine user participation set by admin
+      //* status when event has been closed to determine user participation set by organizer or admin
     },
     task: {
       type: String,
       maxLength: 50
-      //* assigned by admin only
+      //* assigned by organizer or admin only
     },
     willArriveOnMyOwn: {
       type: Boolean,
       //* changed to true by user if doesn't want to create car or search one
-    },
+    }, //! not being used right now. users create single car when going on their own.
   },
   {
     timestamps: true,

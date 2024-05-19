@@ -120,8 +120,8 @@ router.get("/:carGroupId", async (req, res, next) => {
 
     const isUserInCarGroup = carGroupDetails.passengers.some((passenger) => passenger._id == req.payload._id)
    
-    if (req.payload.role !== "admin" && carGroupDetails.owner._id != req.payload._id && !isUserInCarGroup) {
-      res.status(400).json({errorMessage: "No perteneces a este grupo de coche como dueño o como miembro, o eres admin"})
+    if (req.payload.role !== "organizer" && req.payload.role !== "admin" && carGroupDetails.owner._id != req.payload._id && !isUserInCarGroup) {
+      res.status(400).json({errorMessage: "No perteneces a este grupo de coche como dueño o como miembro, o eres organizador/admin"})
       return
     }
 
@@ -317,7 +317,7 @@ router.delete("/:carGroupId", async (req, res, next) => {
     }
 
     if (foundCarGroup.event.status === "closed") {
-      res.status(400).json({ errorMessage: "Este evento está cerrado, no puedes borrar el grupo de coche. Contacta a un Admin o el organizador del evento para poder borrarlo" })
+      res.status(400).json({ errorMessage: "Este evento está cerrado, no puedes borrar el grupo de coche. Contacta a un Admin o al organizador del evento si no puedes asistir" })
       return
     }
 

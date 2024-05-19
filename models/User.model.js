@@ -44,7 +44,7 @@ const userSchema = new Schema(
     },
     role: {
       type: String,
-      enum: ["pending", "user", "admin", "blocked"],
+      enum: ["pending", "user", "organizer", "admin", "blocked"],
       default: "pending"
     },
     icon: {

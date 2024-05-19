@@ -6,7 +6,7 @@ const Attendee = require("../models/Attendee.model");
 const CarGroup = require("../models/CarGroup.model");
 
 const validateMongoIdFormat = require("../utils/validateMongoIdFormat");
-const { isAdmin } = require("../middleware/auth.middleware");
+const { isOrganizerOrAdmin } = require("../middleware/auth.middleware");
 
 // POST "/api/attendee/:userId" - create attendee document for logged user and event
 router.post("/:eventId", async (req, res, next) => {
@@ -136,8 +136,8 @@ router.delete("/:eventId", async (req, res, next) => {
   }
 })
 
-//PATCH "/api/attendee/:attendeeId/status" - admin updates status of attendee
-router.patch("/:attendeeId/attendance", isAdmin, async (req, res, next) => {
+//PATCH "/api/attendee/:attendeeId/status" - organizer or admin updates status of attendee
+router.patch("/:attendeeId/attendance", isOrganizerOrAdmin, async (req, res, next) => {
 
   const { attendeeId } = req.params
   const { attendance } = req.body
@@ -165,8 +165,8 @@ router.patch("/:attendeeId/attendance", isAdmin, async (req, res, next) => {
 
 })
 
-//PATCH "/api/attendee/:attendeeId/task" - admin updates task of attendee
-router.patch("/:attendeeId/task", isAdmin, async (req, res, next) => {
+//PATCH "/api/attendee/:attendeeId/task" - organizer or admin updates task of attendee
+router.patch("/:attendeeId/task", isOrganizerOrAdmin, async (req, res, next) => {
 
   const { attendeeId } = req.params
   const { task } = req.body

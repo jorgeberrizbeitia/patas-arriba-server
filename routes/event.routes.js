@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { isAdmin } = require("../middleware/auth.middleware");
+const { isOrganizerOrAdmin } = require("../middleware/auth.middleware");
 
 const Event = require("../models/Event.model");
 const CarGroup = require("../models/CarGroup.model");
@@ -11,8 +11,8 @@ const validateMongoIdFormat = require("../utils/validateMongoIdFormat")
 const validateDateFormat = require("../utils/validateDateFormat")
 const validateRequiredFields = require("../utils/validateRequiredFields");
 
-// POST "/api/event" - Creates a new event (admin only)
-router.post("/", isAdmin, async (req, res, next) => {
+// POST "/api/event" - Creates a new event (organizer or admin only)
+router.post("/", isOrganizerOrAdmin, async (req, res, next) => {
 
   const { title, category, description, location, date, hasCarOrganization, hasTaskAssignments} = req.body
 
@@ -179,8 +179,8 @@ router.get("/:eventId/edit", async (req, res, next) => {
 
 })
 
-// PUT "/api/event/:eventId" - Updates event title, location and type (admin only)
-router.put("/:eventId", isAdmin, async (req, res, next) => {
+// PUT "/api/event/:eventId" - Updates event title, location and type (organizer or admin only)
+router.put("/:eventId", isOrganizerOrAdmin, async (req, res, next) => {
 
   const { eventId } = req.params
   const { title, category, location, date, hasCarOrganization, hasTaskAssignments} = req.body
@@ -231,8 +231,8 @@ router.put("/:eventId", isAdmin, async (req, res, next) => {
 
 })
 
-// PATCH "/api/event/:eventId/status" - Updates event status (admin only)
-router.patch("/:eventId/status", isAdmin, async (req, res, next) => {
+// PATCH "/api/event/:eventId/status" - Updates event status (organizer or admin only)
+router.patch("/:eventId/status", isOrganizerOrAdmin, async (req, res, next) => {
 
   const { eventId } = req.params
   const { status } = req.body
@@ -265,8 +265,8 @@ router.patch("/:eventId/status", isAdmin, async (req, res, next) => {
 
 })
 
-// PATCH "/api/event/:eventId/description" - Updates event description (admin only)
-router.patch("/:eventId/description", isAdmin, async (req, res, next) => {
+// PATCH "/api/event/:eventId/description" - Updates event description (organizer or admin only)
+router.patch("/:eventId/description", isOrganizerOrAdmin, async (req, res, next) => {
 
   const { eventId } = req.params
   const { description } = req.body
@@ -291,8 +291,8 @@ router.patch("/:eventId/description", isAdmin, async (req, res, next) => {
 
 })
 
-// DELETE "/api/event" - Creates a new event (admin only) also deletes all car groups and messages from this event
-router.delete("/:eventId", isAdmin, async (req, res, next) => {
+// DELETE "/api/event" - Creates a new event (organizer or admin only) also deletes all car groups and messages from this event
+router.delete("/:eventId", isOrganizerOrAdmin, async (req, res, next) => {
 
   const { eventId } = req.params
 
