@@ -3,13 +3,14 @@ const router = express.Router();
 
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const nodemailer = require("nodemailer")
 
 const User = require("../models/User.model");
 
 const { isAuthenticated } = require("../middleware/auth.middleware.js");
 const cleanString = require("../utils/cleanString.js")
 
-const saltRounds = 10;
+const saltRounds = 12;
 
 // POST /api/auth/signup - Validates user data and creates user document in the DB
 router.post("/signup", async (req, res, next) => {
@@ -42,7 +43,7 @@ router.post("/signup", async (req, res, next) => {
 
   const passwordRegex = /(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}/;
   if (!passwordRegex.test(password)) {
-    res.status(400).json({ errorMessage: "Contraseña debe tener al menos 6 caractéres, un numero, una minúscula y una mayúscula" });
+    res.status(400).json({ errorMessage: "Contraseña debe tener al menos 6 caractéres, un número, una minúscula y una mayúscula" });
     return;
   }
 
@@ -134,10 +135,14 @@ router.post("/login", async (req, res, next) => {
       role: foundUser.role 
     };
 
-    const authToken = jwt.sign(payload, process.env.TOKEN_SECRET, {
-      algorithm: "HS256",
-      expiresIn: "7w", //! cambiar a 14 días luego que se pueda reestablecer contraseña.
-    });
+    const authToken = jwt.sign(
+      payload, 
+      process.env.TOKEN_SECRET, 
+      {
+        algorithm: "HS256",
+        expiresIn: "14d",
+      }
+    );
 
     res.status(200).json({ authToken: authToken });
 
@@ -151,5 +156,94 @@ router.post("/login", async (req, res, next) => {
 router.get("/verify", isAuthenticated, (req, res, next) => {
   res.status(200).json({payload: req.payload});
 });
+
+// POST "/api/auth/password-forget" - Used for users that forget password and want to recover
+router.post("/password-forget", async (req, res, next) => {
+
+  const { email } = req.body
+
+  try {
+
+    const foundUser = await User.findOne({ email: email });
+
+    if (!foundUser) {
+      res.status(400).send({ errorMessage: "Usuario no encontrado con ese correo electrónico" });
+      return;
+    }
+
+    // Generate a temporary JWT token for the user that contains the user's id
+    const token = jwt.sign(
+      { _id: foundUser._id }, 
+      process.env.TOKEN_SECRET, 
+      {expiresIn: "15m",}
+    );
+
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL,
+        pass: process.env.EMAIL_PASSWORD,
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL,
+      to: email,
+      subject: "Restablecer contraseña",
+      html: `
+        <h1>Restablece tu contraseña</h1>
+        <p>Haz clic en el enlace de abajo para restablecer la contraseña de la página de eventos de Patas Arriba:</p>
+        <a href="${process.env.ORIGIN}/password-reset/${token}">${process.env.ORIGIN}/password-reset/${token}</a>
+        <p>Este enlace expirará en 15 minutos.</p>
+        <p>Si no fuiste tú quien pidió restablecer la contraseña, ignora este correo.</p>
+      `,
+    };
+
+    // Send the email with password recovery instructions and the temporary token
+    transporter.sendMail(mailOptions, (err, info) => {
+      if (err) {
+        next(err)
+        return;
+      }
+      res.status(200).send({ message: "Correo de recuperación de contraseña enviado" });
+    });
+
+  } catch (err) {
+    next(err)
+  }
+})
+
+// POST "/api/auth/password-reset" - Used for password reset after recovery access above. Validates temporary token.
+router.post("/password-reset", isAuthenticated, async (req, res, next) => {
+
+  const { password } = req.body
+
+  try {
+
+    const passwordRegex = /(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}/;
+    if (!passwordRegex.test(password)) {
+      res.status(400).json({ errorMessage: "Contraseña debe tener al menos 6 caractéres, un número, una minúscula y una mayúscula" });
+      return;
+    }
+
+    const foundUser = await User.findById(req.payload._id);
+
+    if (!foundUser) {
+      res.status(400).send({ errorMessage: "Usuario no encontrado con ese correo electrónico" });
+      return;
+    }
+    
+    const salt = await bcrypt.genSalt(saltRounds);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    foundUser.password = hashedPassword
+    await foundUser.save();
+
+    res.status(200).send({ message: "contraseña actualizada" });
+  } catch (err) {
+    next(err)
+  }
+
+})
 
 module.exports = router;
