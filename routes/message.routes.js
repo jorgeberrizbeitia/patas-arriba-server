@@ -7,6 +7,7 @@ const CarGroup = require("../models/CarGroup.model");
 const validateMongoIdFormat = require("../utils/validateMongoIdFormat")
 const validateRequiredFields = require("../utils/validateRequiredFields");
 const Attendee = require("../models/Attendee.model");
+const PushSubscription = require("../models/PushSubscription.model");
 
 const webpush = require('web-push');
 
