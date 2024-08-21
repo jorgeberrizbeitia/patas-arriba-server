@@ -21,7 +21,8 @@ async function sendPushNotifications(createdMessage) {
 
   const attendees = await Attendee.find({event: createdMessage.relatedId, user: {$ne: createdMessage.sender}});
   const userIds = attendees.map(attendee => attendee.user);
-  const subscriptions = await PushSubscription.find({ user: { $in: userIds } });
+  // const subscriptions = await PushSubscription.find({ user: { $in: userIds } });
+  const subscriptions = await PushSubscription.find(); //! line for testing multiple push. Remove and uncommend above one.
 
   // subscriptions.forEach(subscription => {
   //   webpush.sendNotification(subscription.subscription, JSON.stringify({

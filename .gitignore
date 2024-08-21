@@ -24,3 +24,6 @@ ehthumbs.db
 .vscode
 
 /.idea/
+
+# for local testing
+local-test

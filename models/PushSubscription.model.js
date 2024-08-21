@@ -1,23 +1,21 @@
-const {Schema, model} = require("mongoose");
+const { Schema, model } = require("mongoose");
 
 const pushSubscriptionSchema = new Schema(
-    {
-
-        user: {
-            type: Schema.Types.ObjectId,
-            ref: "User",
-            unique: true,
-            index: true
-        },
-
-        subscription: {
-            type: Object,
-            required: true
-        }
+  {
+    user: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      unique: true,
+      index: true,
     },
-    {
-        timestamps: true,
-    }
+    subscription: {
+      type: Object,
+      required: true,
+    },
+  },
+  {
+    timestamps: true,
+  }
 );
 
 const PushSubscription = model("PushSubscription", pushSubscriptionSchema);
