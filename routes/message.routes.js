@@ -17,17 +17,28 @@ webpush.setVapidDetails(
     process.env['PUSH_PRIVATE_KEY']
 );
 
-async function sendPushNotifications(createdMessage, senderId) {
+async function sendPushNotifications(createdMessage) {
+
   const attendees = await Attendee.find({event: createdMessage.relatedId, user: {$ne: createdMessage.sender}});
   const userIds = attendees.map(attendee => attendee.user);
   const subscriptions = await PushSubscription.find({ user: { $in: userIds } });
 
-  subscriptions.forEach(subscription => {
+  // subscriptions.forEach(subscription => {
+  //   webpush.sendNotification(subscription.subscription, JSON.stringify({
+  //     title: "New Message:",
+  //     text: createdMessage.text
+  //   }));
+  // });
+
+  //! replacing above with promiseAll to minimize work time
+  const notificationPromises = subscriptions.map(subscription =>
     webpush.sendNotification(subscription.subscription, JSON.stringify({
       title: "New Message:",
       text: createdMessage.text
-    }));
-  });
+    }))
+  );
+
+  await Promise.all(notificationPromises); // all notifications sent at the same time.
 
 }
 
@@ -84,9 +95,9 @@ router.post("/:relatedType/:relatedId", async (req, res, next) => {
       return
     }
 
-    sendPushNotifications(createdMessage)
-
     res.sendStatus(201)
+    
+    sendPushNotifications(createdMessage) //* push notifications sent after response is sent to the client. If they fail, potentially removing timeout issue.
 
   } catch (error) {
     next(error)
