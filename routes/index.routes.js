@@ -25,4 +25,7 @@ router.use("/car-group", isAuthenticated, carGroupRoutes);
 const messageRoutes = require("./message.routes");
 router.use("/message", isAuthenticated, messageRoutes);
 
+const pushSubscriptionRoutes = require("./pushsubscription.routes");
+router.use("/pushsubscription", isAuthenticated, pushSubscriptionRoutes);
+
 module.exports = router;

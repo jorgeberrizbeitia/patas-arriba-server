@@ -7,6 +7,29 @@ const CarGroup = require("../models/CarGroup.model");
 const validateMongoIdFormat = require("../utils/validateMongoIdFormat")
 const validateRequiredFields = require("../utils/validateRequiredFields");
 const Attendee = require("../models/Attendee.model");
+const PushSubscription = require("../models/PushSubscription.model");
+
+const webpush = require('web-push');
+
+webpush.setVapidDetails(
+    process.env['PUSH_SUBJECT'],
+    process.env['PUSH_PUBLIC_KEY'],
+    process.env['PUSH_PRIVATE_KEY']
+);
+
+async function sendPushNotifications(createdMessage, senderId) {
+  const attendees = await Attendee.find({event: createdMessage.relatedId, user: {$ne: createdMessage.sender}});
+  const userIds = attendees.map(attendee => attendee.user);
+  const subscriptions = await PushSubscription.find({ user: { $in: userIds } });
+
+  subscriptions.forEach(subscription => {
+    webpush.sendNotification(subscription.subscription, JSON.stringify({
+      title: "New Message:",
+      text: createdMessage.text
+    }));
+  });
+
+}
 
 // POST "/api/message/:relatedType/:relatedId" - Creates a new message in an event or car group
 router.post("/:relatedType/:relatedId", async (req, res, next) => {
@@ -60,6 +83,8 @@ router.post("/:relatedType/:relatedId", async (req, res, next) => {
       res.status(500).json({ errorMessage: "Hubo un problema creando el mensaje" })
       return
     }
+
+    sendPushNotifications(createdMessage)
 
     res.sendStatus(201)
 
