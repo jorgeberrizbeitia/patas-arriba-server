@@ -28,4 +28,7 @@ router.use("/message", isAuthenticated, messageRoutes);
 const pushSubscriptionRoutes = require("./pushsubscription.routes");
 router.use("/pushsubscription", isAuthenticated, pushSubscriptionRoutes);
 
+const streamChatRoutes = require("./stream-chat.routes")
+router.use("/stream-chat", isAuthenticated, streamChatRoutes);
+
 module.exports = router;
