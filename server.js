@@ -14,24 +14,30 @@ const io = socketIo(server, {
 });
 
 io.on('connection', (socket) => {
-  console.log('New client connected');
+  // console.log('New client connected');
 
   // Join a room based on the event or car group ID
   socket.on('joinRoom', (eventOrCarGroupId) => {
     socket.join(eventOrCarGroupId);
-    console.log(`User joined room: ${eventOrCarGroupId}`);
+    // console.log(`User joined room: ${eventOrCarGroupId}`);
   });
 
   // Handle incoming chat messages
   socket.on('chat message', (message) => {
 
-    // Broadcast to all connected clients to the same chat group (event or car group ID)
+    // Broadcast to all connected clients to the same chat group (event or car group ID) that a message was created
     io.to(message.relatedId).emit('chat message', message); 
   });
 
-  socket.on('disconnect', () => {
-    console.log('Client disconnected');
-  });
+  socket.on("message delete", (message) => {
+
+    // Broadcast to all connected clients to the same chat group (event or car group ID) that a message was deleted
+    io.to(message.relatedId).emit('message delete', message); 
+  })
+
+  // socket.on('disconnect', () => {
+  //   console.log('Client disconnected');
+  // });
 });
 
 server.listen(PORT, () => {
