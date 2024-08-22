@@ -19,13 +19,13 @@ webpush.setVapidDetails(
 
 async function sendPushNotifications(createdMessage) {
 
-  const attendees = await Attendee.find({event: createdMessage.relatedId, user: {$ne: createdMessage.sender}});
+  const attendees = await Attendee.find({event: createdMessage.relatedId, user: {$ne: createdMessage.sender._id}});
   const userIds = attendees.map(attendee => attendee.user);
   const subscriptions = await PushSubscription.find({ user: { $in: userIds } });
 
   const notificationPromises = subscriptions.map(subscription =>
     webpush.sendNotification(subscription.subscription, JSON.stringify({
-      title: "New Message:",
+      title: `Mensaje de ${createdMessage.username}`,
       text: createdMessage.text
     }))
   );
@@ -87,9 +87,12 @@ router.post("/:relatedType/:relatedId", async (req, res, next) => {
       return
     }
 
-    res.sendStatus(201)
+    const populatedMessage = await Message.findById(createdMessage._id).populate("sender", "username fullName icon iconColor role");
+    //* done like this so there is no need to refresh messages on send. id is required to delete message.
+
+    res.status(201).send(populatedMessage)
     
-    sendPushNotifications(createdMessage) //* push notifications sent after response is sent to the client. If they fail, potentially removing timeout issue.
+    sendPushNotifications(populatedMessage) //* push notifications sent after response is sent to the client. If they fail, potentially removing timeout issue.
 
   } catch (error) {
     next(error)
