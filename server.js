@@ -9,19 +9,24 @@ const socketIo = require("socket.io");
 const io = socketIo(server, {
   cors: {
     origin: process.env.ORIGIN,
-    methods: ["GET", "POST"],
+    methods: ["GET", "POST"], //TODO add other methods if needed like DELETE
   },
 });
 
 io.on('connection', (socket) => {
   console.log('New client connected');
 
+  // Join a room based on the event or car group ID
+  socket.on('joinRoom', (eventOrCarGroupId) => {
+    socket.join(eventOrCarGroupId);
+    console.log(`User joined room: ${eventOrCarGroupId}`);
+  });
+
   // Handle incoming chat messages
-  socket.on('chat message', (msg) => {
+  socket.on('chat message', (message) => {
 
-    
-
-    io.emit('chat message', msg); // Broadcast to all connected clients
+    // Broadcast to all connected clients to the same chat group (event or car group ID)
+    io.to(message.relatedId).emit('chat message', message); 
   });
 
   socket.on('disconnect', () => {
