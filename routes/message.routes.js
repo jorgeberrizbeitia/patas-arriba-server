@@ -25,7 +25,7 @@ async function sendPushNotifications(createdMessage) {
 
   const notificationPromises = subscriptions.map(subscription =>
     webpush.sendNotification(subscription.subscription, JSON.stringify({
-      title: `Mensaje de ${createdMessage.username}`,
+      title: `Mensaje de ${createdMessage.sender.username}`,
       text: createdMessage.text
     }))
   );
