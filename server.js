@@ -17,9 +17,15 @@ io.on('connection', (socket) => {
   console.log('New client connected');
 
   // Join a room based on the event or car group ID
-  socket.on('joinRoom', (eventOrCarGroupId) => {
+  socket.on('joinRoom', (data) => {
+
+    const eventOrCarGroupId = data.room;
+    const userID = data.userID;
+
     socket.join(eventOrCarGroupId);
-    console.log(`User joined room: ${eventOrCarGroupId}`);
+    socket.userID = userID;
+
+    console.log(`User ${userID} joined room: ${eventOrCarGroupId}`);
   });
 
   // Handle incoming chat messages
