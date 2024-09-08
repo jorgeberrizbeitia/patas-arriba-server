@@ -8,6 +8,8 @@ const validateMongoIdFormat = require("../utils/validateMongoIdFormat")
 const validateRequiredFields = require("../utils/validateRequiredFields");
 const Attendee = require("../models/Attendee.model");
 const PushSubscription = require("../models/PushSubscription.model");
+const { getUsersInRoom } = require('../utils/socketHandler');  // Import only getUsersInRoom
+
 
 const webpush = require('web-push');
 
@@ -17,9 +19,13 @@ webpush.setVapidDetails(
     process.env['PUSH_PRIVATE_KEY']
 );
 
-async function sendPushNotifications(createdMessage) {
+async function sendPushNotifications(createdMessage, usersInRoom) {
 
-  const attendees = await Attendee.find({event: createdMessage.relatedId, user: {$ne: createdMessage.sender._id}});
+  const attendees = await Attendee.find({
+    event: createdMessage.relatedId,
+    user: {$nin: usersInRoom}
+  });
+
   const userIds = attendees.map(attendee => attendee.user);
   const subscriptions = await PushSubscription.find({ user: { $in: userIds } });
 
@@ -93,9 +99,13 @@ router.post("/:relatedType/:relatedId", async (req, res, next) => {
     const populatedMessage = await Message.findById(createdMessage._id).populate("sender", "username fullName icon iconColor role");
     //* done like this so there is no need to refresh messages on send. id is required to delete message.
 
+//  const usersInRoom = getUsersInRoom(populatedMessage.relatedId.toString(), req.app.get('io'));
+    const usersInRoom = getUsersInRoom(populatedMessage.relatedId.toString());
+//  usersInRoom.push(populatedMessage.sender._id.toString()); // removed as unnecesary since it should be impossible that the sender is NOT in the socket.
+
     res.status(201).send(populatedMessage)
     
-    sendPushNotifications(populatedMessage) //* push notifications sent after response is sent to the client. If they fail, potentially removing timeout issue.
+    sendPushNotifications(populatedMessage, usersInRoom) //* push notifications sent after response is sent to the client. If they fail, potentially removing timeout issue.
 
   } catch (error) {
     next(error)
