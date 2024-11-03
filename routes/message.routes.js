@@ -21,7 +21,7 @@ webpush.setVapidDetails(
 
 async function sendPushNotifications(createdMessage, usersInRoom, carOwnerAndPassengers) {
 
-  const userIds = null; //* who to send the notification
+  let userIds = null; //* who to send the notification
 
   //* below we search all attendees/car-members except the ones in the chat room and the sender (to prevent bug of user seeing own message as notif)
   if (createdMessage.relatedType === "event") {
