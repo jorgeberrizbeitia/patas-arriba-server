@@ -19,14 +19,21 @@ webpush.setVapidDetails(
     process.env['PUSH_PRIVATE_KEY']
 );
 
-async function sendPushNotifications(createdMessage, usersInRoom) {
+async function sendPushNotifications(createdMessage, usersInRoom, carOwnerAndPassengers) {
 
-  const attendees = await Attendee.find({
-    event: createdMessage.relatedId,
-    user: {$nin: usersInRoom}
-  });
+  const userIds = null; //* who to send the notification
 
-  const userIds = attendees.map(attendee => attendee.user);
+  //* below we search all attendees/car-members except the ones in the chat room and the sender (to prevent bug of user seeing own message as notif)
+  if (createdMessage.relatedType === "event") {
+    notificationReceivers = await Attendee.find({
+      event: createdMessage.relatedId,
+      user: {$nin: usersInRoom, $ne: createdMessage.sender._id}
+    });
+    userIds = notificationReceivers.map(attendee => attendee.user);
+  } else if (createdMessage.relatedType === "carGroup") {
+    userIds = carOwnerAndPassengers.filter((carMemberId) => !usersInRoom.includes(carMemberId) || carMemberId == createdMessage.sender._id) 
+  }
+
   const subscriptions = await PushSubscription.find({ user: { $in: userIds } });
 
   const notificationPromises = subscriptions.map(subscription =>
@@ -64,6 +71,8 @@ router.post("/:relatedType/:relatedId", async (req, res, next) => {
 
   try {
 
+    const carOwnerAndPassengers = null //* used to prevent calling again CarGroup.findById(relatedId) inside sendPushNotifications
+
     if (relatedType === "event" && req.payload.role !== "admin") {
       const attendee = await Attendee.findOne({event: relatedId, user: req.payload._id})
       if (!attendee) {
@@ -74,6 +83,7 @@ router.post("/:relatedType/:relatedId", async (req, res, next) => {
     
     else if (relatedType === "car-group") {
       const carGroup = await CarGroup.findById(relatedId);
+      carOwnerAndPassengers = [carGroup.owner, ...carGroup.passengers]
       if (!carGroup) {
         res.status(400).json({ errorMessage: "No hay grupos de coche con ese id" })
         return
@@ -99,13 +109,14 @@ router.post("/:relatedType/:relatedId", async (req, res, next) => {
     const populatedMessage = await Message.findById(createdMessage._id).populate("sender", "username fullName icon iconColor role");
     //* done like this so there is no need to refresh messages on send. id is required to delete message.
 
-//  const usersInRoom = getUsersInRoom(populatedMessage.relatedId.toString(), req.app.get('io'));
+    //  const usersInRoom = getUsersInRoom(populatedMessage.relatedId.toString(), req.app.get('io'));
     const usersInRoom = getUsersInRoom(populatedMessage.relatedId.toString());
-//  usersInRoom.push(populatedMessage.sender._id.toString()); // removed as unnecesary since it should be impossible that the sender is NOT in the socket.
+    //  usersInRoom.push(populatedMessage.sender._id.toString()); // removed as unnecesary since it should be impossible that the sender is NOT in the socket.
 
     res.status(201).send(populatedMessage)
     
-    sendPushNotifications(populatedMessage, usersInRoom) //* push notifications sent after response is sent to the client. If they fail, potentially removing timeout issue.
+    //* push notifications sent after response is sent to the client. If they fail, potentially removing timeout issue.
+    sendPushNotifications(populatedMessage, usersInRoom, carOwnerAndPassengers) 
 
   } catch (error) {
     next(error)
