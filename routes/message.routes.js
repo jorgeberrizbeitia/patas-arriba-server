@@ -71,7 +71,7 @@ router.post("/:relatedType/:relatedId", async (req, res, next) => {
 
   try {
 
-    const carOwnerAndPassengers = null //* used to prevent calling again CarGroup.findById(relatedId) inside sendPushNotifications
+    let carOwnerAndPassengers = null //* used to prevent calling again CarGroup.findById(relatedId) inside sendPushNotifications
 
     if (relatedType === "event" && req.payload.role !== "admin") {
       const attendee = await Attendee.findOne({event: relatedId, user: req.payload._id})
