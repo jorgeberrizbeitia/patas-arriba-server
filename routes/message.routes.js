@@ -31,7 +31,15 @@ async function sendPushNotifications(createdMessage, usersInRoom, carOwnerAndPas
     });
     userIds = notificationReceivers.map(attendee => attendee.user);
   } else if (createdMessage.relatedType === "carGroup") {
-    userIds = carOwnerAndPassengers.filter((carMemberId) => !usersInRoom.includes(carMemberId) || carMemberId == createdMessage.sender._id) 
+    userIds = carOwnerAndPassengers.filter((carMemberId) => {
+      if (carMemberId == createdMessage.sender._id) {
+        return false // don't include message sender
+      } else if (usersInRoom.includes(carMemberId)) {
+        return false // don't include people in chat
+      } else {
+        return true // include everyone else
+      }
+    }) 
   }
 
   const subscriptions = await PushSubscription.find({ user: { $in: userIds } });
