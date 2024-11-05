@@ -30,7 +30,7 @@ async function sendPushNotifications(createdMessage, usersInRoom, carOwnerAndPas
       user: {$nin: usersInRoom, $ne: createdMessage.sender._id}
     });
     userIds = notificationReceivers.map(attendee => attendee.user);
-  } else if (createdMessage.relatedType === "carGroup") {
+  } else if (createdMessage.relatedType === "car-group") {
     userIds = carOwnerAndPassengers.filter((carMemberId) => {
       if (carMemberId == createdMessage.sender._id) {
         return false // don't include message sender
