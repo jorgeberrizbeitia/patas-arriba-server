@@ -24,6 +24,9 @@ async function sendPushNotifications(createdMessage, usersInRoom, carOwnerAndPas
   let userIds = null; //* who to send the notification
 
   //* below we search all attendees/car-members except the ones in the chat room and the sender (to prevent bug of user seeing own message as notif)
+
+  console.log("userIds before", userIds)
+
   if (createdMessage.relatedType === "event") {
     notificationReceivers = await Attendee.find({
       event: createdMessage.relatedId,
@@ -32,7 +35,8 @@ async function sendPushNotifications(createdMessage, usersInRoom, carOwnerAndPas
     userIds = notificationReceivers.map(attendee => attendee.user);
   } else if (createdMessage.relatedType === "car-group") {
     userIds = carOwnerAndPassengers.filter((carMemberId) => {
-      if (carMemberId == createdMessage.sender._id) {
+      carMemberId = carMemberId.toString()
+      if (carMemberId === createdMessage.sender._id.toString()) {
         return false // don't include message sender
       } else if (usersInRoom.includes(carMemberId)) {
         return false // don't include people in chat
@@ -41,6 +45,11 @@ async function sendPushNotifications(createdMessage, usersInRoom, carOwnerAndPas
       }
     }) 
   }
+
+  // console.log("carOwnerAndPassengers", carOwnerAndPassengers)
+  // console.log("createdMessage.sender._id", createdMessage.sender._id)
+  // console.log("usersInRoom", usersInRoom)
+  // console.log("userIds after", userIds)
 
   const subscriptions = await PushSubscription.find({ user: { $in: userIds } });
 
