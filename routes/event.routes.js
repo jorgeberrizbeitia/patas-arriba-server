@@ -22,14 +22,14 @@ webpush.setVapidDetails(
 
 async function sendPushNotifications(createdEvent) {
 
-  const subscriptions = await PushSubscription.find({ user: { $ne: createdEvent.owner } });
+  const subscriptions = await PushSubscription.find({ user: { $ne: createdEvent?.owner } });
 
   const notificationPromises = subscriptions.map((subscription) =>
     webpush.sendNotification(subscription.subscription, JSON.stringify({
-      title: `Nuevo evento: ${createdEvent.title}`,
-      body: `Fecha: ${createdEvent.date}`,
+      title: `¡Nuevo evento! ${createdEvent?.title}`,
+      body: `El ${createdEvent?.date?.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long',day: 'numeric' })}. 👉 ¡Haz clic para más detalles!` ,
       data: {
-        path: `/event/${createdEvent._id}`
+        path: `/event/${createdEvent?._id}`
       }
     }))
   );
