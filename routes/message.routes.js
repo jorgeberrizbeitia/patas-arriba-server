@@ -46,11 +46,6 @@ async function sendPushNotifications(createdMessage, usersInRoom, carOwnerAndPas
     }) 
   }
 
-  // console.log("carOwnerAndPassengers", carOwnerAndPassengers)
-  // console.log("createdMessage.sender._id", createdMessage.sender._id)
-  // console.log("usersInRoom", usersInRoom)
-  // console.log("userIds after", userIds)
-
   const subscriptions = await PushSubscription.find({ user: { $in: userIds } });
 
   const notificationPromises = subscriptions.map(subscription =>

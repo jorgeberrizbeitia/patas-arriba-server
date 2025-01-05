@@ -6,10 +6,37 @@ const Event = require("../models/Event.model");
 const CarGroup = require("../models/CarGroup.model");
 const Message = require("../models/Message.model");
 const Attendee = require("../models/Attendee.model");
+const PushSubscription = require("../models/PushSubscription.model");
 
 const validateMongoIdFormat = require("../utils/validateMongoIdFormat")
 const validateDateFormat = require("../utils/validateDateFormat")
 const validateRequiredFields = require("../utils/validateRequiredFields");
+
+const webpush = require('web-push');
+
+webpush.setVapidDetails(
+  process.env['PUSH_SUBJECT'],
+  process.env['PUSH_PUBLIC_KEY'],
+  process.env['PUSH_PRIVATE_KEY']
+);
+
+async function sendPushNotifications(createdEvent) {
+
+  const subscriptions = await PushSubscription.find({ user: { $ne: createdEvent.owner } });
+
+  const notificationPromises = subscriptions.map((subscription) =>
+    webpush.sendNotification(subscription.subscription, JSON.stringify({
+      title: `Nuevo evento: ${createdEvent.title}`,
+      body: `Fecha: ${createdEvent.date}`,
+      data: {
+        path: `/event/${createdEvent._id}`
+      }
+    }))
+  );
+
+  await Promise.all(notificationPromises); // all notifications sent at the same time.
+
+}
 
 // POST "/api/event" - Creates a new event (organizer or admin only)
 router.post("/", isOrganizerOrAdmin, async (req, res, next) => {
@@ -61,6 +88,9 @@ router.post("/", isOrganizerOrAdmin, async (req, res, next) => {
     })
 
     res.status(201).json({ createdEventId: createdEvent?._id })
+
+    //* push notifications sent after response is sent to the client. If they fail, potentially removing timeout issue.
+    sendPushNotifications(createdEvent) 
 
   } catch (error) {
     next(error)
