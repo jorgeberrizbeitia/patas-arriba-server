@@ -26,7 +26,7 @@ async function sendPushNotifications(createdEvent) {
 
   const notificationPromises = subscriptions.map((subscription) =>
     webpush.sendNotification(subscription.subscription, JSON.stringify({
-      title: `¡Nuevo evento! ${createdEvent?.title}`,
+      title: `¡Nuevo! ${createdEvent?.title}`,
       body: `El ${createdEvent?.date?.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long',day: 'numeric' })}. 👉 ¡Haz clic para más detalles!` ,
       data: {
         path: `/event/${createdEvent?._id}`
