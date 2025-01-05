@@ -27,6 +27,8 @@ ehthumbs.db
 
 # for local testing
 local-test
+local-test/*
 
 # for data analytics
-data-analytics
+local-data-analytics
+local-data-analytics/*
