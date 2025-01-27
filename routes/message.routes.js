@@ -12,8 +12,8 @@ const { getUsersInRoom } = require('../utils/socketHandler');  // Import only ge
 
 
 const webpush = require('web-push');
-const pLimit = require("p-limit")
-const limit = pLimit(10); // limit to 10 concurrent push notifications
+const promiseLimit = require('promise-limit');
+const limit = promiseLimit(10); // limit to 10 concurrent push notifications
 
 webpush.setVapidDetails(
     process.env['PUSH_SUBJECT'],
@@ -66,10 +66,12 @@ async function sendPushNotifications(createdMessage, usersInRoom, carOwnerAndPas
 
   const failedNotifications = results.filter((result) => result.status === 'rejected')
 
-  console.error(`A total of ${failedNotifications.length} notifications out of ${results.length} failed to be sent. Below each reason:`)
-  failedNotifications.forEach((failedNotification) => {
-    console.error('Failed to send notification:', failedNotification.reason);
-  });
+  if (failedNotifications.length > 0) {
+    console.error(`A total of ${failedNotifications.length} notifications out of ${results.length} failed to be sent. Below each reason:`)
+    failedNotifications.forEach((failedNotification) => {
+      console.error('Failed to send notification:', failedNotification.reason);
+    });
+  }
 
 }
 
