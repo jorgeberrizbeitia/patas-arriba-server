@@ -13,6 +13,8 @@ const validateDateFormat = require("../utils/validateDateFormat")
 const validateRequiredFields = require("../utils/validateRequiredFields");
 
 const webpush = require('web-push');
+const pLimit = require("p-limit")
+const limit = pLimit(10); // limit to 10 concurrent push notifications
 
 webpush.setVapidDetails(
   process.env['PUSH_SUBJECT'],
@@ -25,16 +27,25 @@ async function sendPushNotifications(createdEvent) {
   const subscriptions = await PushSubscription.find({ user: { $ne: createdEvent?.owner } });
 
   const notificationPromises = subscriptions.map((subscription) =>
-    webpush.sendNotification(subscription.subscription, JSON.stringify({
-      title: `¡Nuevo! ${createdEvent?.title}`,
-      body: `El ${createdEvent?.date?.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long',day: 'numeric' })}. 👉 ¡Haz clic para más detalles!` ,
-      data: {
-        path: `/event/${createdEvent?._id}`
-      }
-    }))
+    limit(() => {
+      webpush.sendNotification(subscription.subscription, JSON.stringify({
+        title: `¡Nuevo! ${createdEvent?.title}`,
+        body: `El ${createdEvent?.date?.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long',day: 'numeric' })}. 👉 ¡Haz clic para más detalles!` ,
+        data: {
+          path: `/event/${createdEvent?._id}`
+        }
+      }))
+    })
   );
 
-  await Promise.all(notificationPromises); // all notifications sent at the same time.
+  const results = await Promise.allSettled(notificationPromises); // all notifications sent at the same time.
+
+  const failedNotifications = results.filter((result) => result.status === 'rejected')
+
+  console.error(`A total of ${failedNotifications.length} notifications out of ${results.length} failed to be sent. Below each reason:`)
+  failedNotifications.forEach((failedNotification) => {
+    console.error('Failed to send notification:', failedNotification.reason);
+  });
 
 }
 
