@@ -24,29 +24,40 @@ webpush.setVapidDetails(
 
 async function sendPushNotifications(createdEvent) {
 
-  const subscriptions = await PushSubscription.find({ user: { $ne: createdEvent?.owner } });
+  try {
+    const subscriptions = await PushSubscription.find({ user: { $ne: createdEvent?.owner } });
 
-  const notificationPromises = subscriptions.map((subscription) =>
-    limit(() => {
-      webpush.sendNotification(subscription.subscription, JSON.stringify({
-        title: `¡Nuevo! ${createdEvent?.title}`,
-        body: `El ${createdEvent?.date?.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long',day: 'numeric' })}. 👉 ¡Haz clic para más detalles!` ,
-        data: {
-          path: `/event/${createdEvent?._id}`
+    const notificationPromises = subscriptions.map((subscription) =>
+      limit(() => {
+        webpush.sendNotification(subscription.subscription, JSON.stringify({
+          title: `¡Nuevo! ${createdEvent?.title}`,
+          body: `El ${createdEvent?.date?.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long',day: 'numeric' })}. 👉 ¡Haz clic para más detalles!` ,
+          data: {
+            path: `/event/${createdEvent?._id}`
+          }
+        }))
+      })
+    );
+
+    const results = await Promise.allSettled(notificationPromises); // all notifications sent at the same time.
+
+    const failedNotifications = results.filter((result) => result.status === 'rejected')
+
+    if (failedNotifications.length > 0) {
+      console.error(`A total of ${failedNotifications.length} notifications failed.`);
+
+      for (const failedNotif of failedNotifications) {
+        console.error('Failed to send notification:', failedNotif.reason);
+
+        if (failedNotif?.reason?.statusCode === 410) {
+          const endpoint = failedNotif.reason.endpoint;
+          console.log(`Removing expired push subscription: ${endpoint}`);
+          await PushSubscription.findOneAndDelete({ "subscription.endpoint": endpoint });
         }
-      }))
-    })
-  );
-
-  const results = await Promise.allSettled(notificationPromises); // all notifications sent at the same time.
-
-  const failedNotifications = results.filter((result) => result.status === 'rejected')
-
-  if (failedNotifications.length > 0) {
-    console.error(`A total of ${failedNotifications.length} notifications out of ${results.length} failed to be sent. Below each reason:`)
-    failedNotifications.forEach((failedNotification) => {
-      console.error('Failed to send notification:', failedNotification.reason);
-    });
+      }
+    }
+  } catch (error) {
+    console.error("Unexpected error in push notifications:", error);
   }
 
 }

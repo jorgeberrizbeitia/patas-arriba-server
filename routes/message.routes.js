@@ -23,54 +23,65 @@ webpush.setVapidDetails(
 
 async function sendPushNotifications(createdMessage, usersInRoom, carOwnerAndPassengers) {
 
-  let userIds = null; //* who to send the notification
+  try {
+    let userIds = null; //* who to send the notification
 
-  //* below we search all attendees/car-members except the ones in the chat room and the sender (to prevent bug of user seeing own message as notif)
-
-  console.log("userIds before", userIds)
-
-  if (createdMessage.relatedType === "event") {
-    notificationReceivers = await Attendee.find({
-      event: createdMessage.relatedId,
-      user: {$nin: usersInRoom, $ne: createdMessage.sender._id}
-    });
-    userIds = notificationReceivers.map(attendee => attendee.user);
-  } else if (createdMessage.relatedType === "car-group") {
-    userIds = carOwnerAndPassengers.filter((carMemberId) => {
-      carMemberId = carMemberId.toString()
-      if (carMemberId === createdMessage.sender._id.toString()) {
-        return false // don't include message sender
-      } else if (usersInRoom.includes(carMemberId)) {
-        return false // don't include people in chat
-      } else {
-        return true // include everyone else
-      }
-    }) 
-  }
-
-  const subscriptions = await PushSubscription.find({ user: { $in: userIds } });
-
-  const notificationPromises = subscriptions.map(subscription =>
-    limit(() => {
-      webpush.sendNotification(subscription.subscription, JSON.stringify({
-        title: `Mensaje de ${createdMessage.sender.username}`,
-        body: createdMessage.text,
-        data: {
-          path: `/${createdMessage.relatedType}/${createdMessage.relatedId}#bottom`
+    //* below we search all attendees/car-members except the ones in the chat room and the sender (to prevent bug of user seeing own message as notif)
+  
+    console.log("userIds before", userIds)
+  
+    if (createdMessage.relatedType === "event") {
+      notificationReceivers = await Attendee.find({
+        event: createdMessage.relatedId,
+        user: {$nin: usersInRoom, $ne: createdMessage.sender._id}
+      });
+      userIds = notificationReceivers.map(attendee => attendee.user);
+    } else if (createdMessage.relatedType === "car-group") {
+      userIds = carOwnerAndPassengers.filter((carMemberId) => {
+        carMemberId = carMemberId.toString()
+        if (carMemberId === createdMessage.sender._id.toString()) {
+          return false // don't include message sender
+        } else if (usersInRoom.includes(carMemberId)) {
+          return false // don't include people in chat
+        } else {
+          return true // include everyone else
         }
-      }))
-    })
-  );
-
-  const results = await Promise.allSettled(notificationPromises); // all notifications sent at the same time.
-
-  const failedNotifications = results.filter((result) => result.status === 'rejected')
-
-  if (failedNotifications.length > 0) {
-    console.error(`A total of ${failedNotifications.length} notifications out of ${results.length} failed to be sent. Below each reason:`)
-    failedNotifications.forEach((failedNotification) => {
-      console.error('Failed to send notification:', failedNotification.reason);
-    });
+      }) 
+    }
+  
+    const subscriptions = await PushSubscription.find({ user: { $in: userIds } });
+  
+    const notificationPromises = subscriptions.map(subscription =>
+      limit(() => {
+        webpush.sendNotification(subscription.subscription, JSON.stringify({
+          title: `Mensaje de ${createdMessage.sender.username}`,
+          body: createdMessage.text,
+          data: {
+            path: `/${createdMessage.relatedType}/${createdMessage.relatedId}#bottom`
+          }
+        }))
+      })
+    );
+  
+    const results = await Promise.allSettled(notificationPromises); // all notifications sent at the same time.
+  
+    const failedNotifications = results.filter((result) => result.status === 'rejected')
+  
+    if (failedNotifications.length > 0) {
+      console.error(`A total of ${failedNotifications.length} notifications failed.`);
+  
+      for (const failedNotif of failedNotifications) {
+        console.error('Failed to send notification:', failedNotif.reason);
+  
+        if (failedNotif?.reason?.statusCode === 410) {
+          const endpoint = failedNotif.reason.endpoint;
+          console.log(`Removing expired push subscription: ${endpoint}`);
+          await PushSubscription.findOneAndDelete({ "subscription.endpoint": endpoint });
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Unexpected error in push notifications:", error);
   }
 
 }
