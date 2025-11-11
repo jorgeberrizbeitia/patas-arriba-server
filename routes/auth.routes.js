@@ -3,7 +3,8 @@ const router = express.Router();
 
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const nodemailer = require("nodemailer")
+// const nodemailer = require("nodemailer") //! changed for mailersend
+const axios = require("axios")
 
 const User = require("../models/User.model");
 
@@ -11,6 +12,7 @@ const { isAuthenticated } = require("../middleware/auth.middleware.js");
 const cleanString = require("../utils/cleanString.js")
 
 const saltRounds = 12;
+
 
 // POST /api/auth/signup - Validates user data and creates user document in the DB
 router.post("/signup", async (req, res, next) => {
@@ -189,7 +191,7 @@ router.post("/password-forget", async (req, res, next) => {
 
     await axios.post("https://api.mailersend.com/v1/email", {
       from: { email: process.env.EMAIL },
-      to: [ { email } ],
+      to: [ { email: email } ],
       subject: "Restablecer contraseña",
       html: htmlContent,
     }, {
@@ -202,6 +204,7 @@ router.post("/password-forget", async (req, res, next) => {
     res.status(200).send({ message: "Correo de recuperación de contraseña enviado" });
 
 
+    //! changed for mailersend
     // const transporter = nodemailer.createTransport({
     //   service: "gmail",
     //   auth: {
