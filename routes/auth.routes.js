@@ -178,35 +178,59 @@ router.post("/password-forget", async (req, res, next) => {
       {expiresIn: "15m",}
     );
 
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL,
-        pass: process.env.EMAIL_PASSWORD,
+    const resetUrl = `${process.env.ORIGIN}/password-reset/${token}`;
+
+    const htmlContent = `
+      <h1>Restablece tu contraseña</h1>
+      <p>Haz clic en el siguiente enlace para restablecer tu contraseña:</p>
+      <a href="${resetUrl}">${resetUrl}</a>
+      <p>Este enlace expirará en 15 minutos.</p>
+    `;
+
+    await axios.post("https://api.mailersend.com/v1/email", {
+      from: { email: process.env.EMAIL },
+      to: [ { email } ],
+      subject: "Restablecer contraseña",
+      html: htmlContent,
+    }, {
+      headers: {
+        Authorization: `Bearer ${process.env.MAILERSEND_API_KEY}`,
+        "Content-Type": "application/json",
       },
     });
 
-    const mailOptions = {
-      from: process.env.EMAIL,
-      to: email,
-      subject: "Restablecer contraseña",
-      html: `
-        <h1>Restablece tu contraseña</h1>
-        <p>Haz clic en el enlace de abajo para restablecer la contraseña de la página de eventos de Patas Arriba:</p>
-        <a href="${process.env.ORIGIN}/password-reset/${token}">${process.env.ORIGIN}/password-reset/${token}</a>
-        <p>Este enlace expirará en 15 minutos.</p>
-        <p>Si no fuiste tú quien pidió restablecer la contraseña, ignora este correo.</p>
-      `,
-    };
+    res.status(200).send({ message: "Correo de recuperación de contraseña enviado" });
 
-    // Send the email with password recovery instructions and the temporary token
-    transporter.sendMail(mailOptions, (err, info) => {
-      if (err) {
-        next(err)
-        return;
-      }
-      res.status(200).send({ message: "Correo de recuperación de contraseña enviado" });
-    });
+
+    // const transporter = nodemailer.createTransport({
+    //   service: "gmail",
+    //   auth: {
+    //     user: process.env.EMAIL,
+    //     pass: process.env.EMAIL_PASSWORD,
+    //   },
+    // });
+
+    // const mailOptions = {
+    //   from: process.env.EMAIL,
+    //   to: email,
+    //   subject: "Restablecer contraseña",
+    //   html: `
+    //     <h1>Restablece tu contraseña</h1>
+    //     <p>Haz clic en el enlace de abajo para restablecer la contraseña de la página de eventos de Patas Arriba:</p>
+    //     <a href="${process.env.ORIGIN}/password-reset/${token}">${process.env.ORIGIN}/password-reset/${token}</a>
+    //     <p>Este enlace expirará en 15 minutos.</p>
+    //     <p>Si no fuiste tú quien pidió restablecer la contraseña, ignora este correo.</p>
+    //   `,
+    // };
+
+    // // Send the email with password recovery instructions and the temporary token
+    // transporter.sendMail(mailOptions, (err, info) => {
+    //   if (err) {
+    //     next(err)
+    //     return;
+    //   }
+    //   res.status(200).send({ message: "Correo de recuperación de contraseña enviado" });
+    // });
 
   } catch (err) {
     next(err)
