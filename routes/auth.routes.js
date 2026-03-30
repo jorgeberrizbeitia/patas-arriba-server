@@ -4,7 +4,7 @@ const router = express.Router();
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 // const nodemailer = require("nodemailer") //! changed for mailersend
-const SibApiV3Sdk = require("@getbrevo/brevo")
+const { BrevoClient } = require("@getbrevo/brevo")
 
 
 const User = require("../models/User.model");
@@ -190,10 +190,9 @@ router.post("/password-forget", async (req, res, next) => {
       <p>Este enlace expirará en 15 minutos.</p>
     `;
 
-    const brevo = new SibApiV3Sdk.TransactionalEmailsApi();
-    brevo.setApiKey(SibApiV3Sdk.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY);
+    const brevo = new BrevoClient({ apiKey: process.env.BREVO_API_KEY });
 
-    await brevo.sendTransacEmail({
+    await brevo.transactionalEmails.sendTransacEmail({
       sender: { email: process.env.BREVO_SENDER_EMAIL },
       to: [{ email }],
       subject: "Restablecer contraseña",
