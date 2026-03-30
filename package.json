@@ -21,6 +21,9 @@
     "socket.io": "^4.7.5",
     "web-push": "^3.6.7"
   },
+  "engines": {
+    "node": ">=24"
+  },
   "devDependencies": {
     "@flydotio/dockerfile": "^0.5.8",
     "json-2-csv": "^5.5.7",
