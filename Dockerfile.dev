@@ -1,0 +1,7 @@
+FROM node:24-slim
+
+WORKDIR /app
+
+EXPOSE 5005
+
+CMD ["sh", "-c", "npm install && npm run dev"]
