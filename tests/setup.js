@@ -21,6 +21,16 @@ import { MongoMemoryServer } from "mongodb-memory-server";
 
 dotenv.config();
 
+// MongoDB Community Edition does not publish aarch64 binaries for Debian
+// (only Ubuntu / RHEL / Amazon Linux). The Anthropic devcontainer image
+// is bookworm-based, so on Apple Silicon memory-server's auto-detection
+// asks fastdl.mongodb.org for a debian12-aarch64 archive that 403s.
+// Forcing ubuntu-22.04 picks an archive that actually exists for arm64.
+// On darwin/x86_64 hosts MONGOMS_DISTRO is ignored — memory-server keys
+// off platform first, so the override is safe outside Linux too.
+process.env.MONGOMS_VERSION ||= "7.0.14";
+process.env.MONGOMS_DISTRO ||= "ubuntu-22.04";
+
 const mongo = await MongoMemoryServer.create();
 process.env.MONGODB_URI = mongo.getUri();
 
