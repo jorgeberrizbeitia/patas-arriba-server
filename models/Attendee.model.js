@@ -13,8 +13,10 @@ const attendeeSchema = new Schema(
     attendance: {
       type: String,
       enum: ["pending", "show", "no-show", "excused"],
-      default: "pending",
-      //* status when event has been closed to determine user participation set by organizer or admin
+      default: "show",
+      //* New sign-ups are assumed attending; organizer only marks exceptions
+      //* (no-show, excused). The "pending" value stays in the enum so legacy
+      //* records persisted before this change remain readable.
     },
     task: {
       type: String,
